@@ -2,7 +2,7 @@ import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
 import { createRetroSchema, retroIdSchema, type HealthStatus } from "@retro/shared";
 import Fastify from "fastify";
-import { Server } from "socket.io";
+import { Server, type ServerOptions } from "socket.io";
 import type { Analytics } from "./analytics";
 import { registerRealtime, type RealtimeServer } from "./realtime";
 import type { RetroStore } from "./retro/store";
@@ -18,8 +18,11 @@ export interface AppOptions {
   store: RetroStore;
   analytics: Analytics;
   features?: { reminders: boolean };
+  /** The Redis adapter when several server instances share the load; omit for one. */
+  adapter?: ServerOptions["adapter"];
   logger?: boolean;
   trustProxy?: boolean;
+  createLimitPerMinute?: number;
   probeTimeoutMs?: number;
 }
 
@@ -45,8 +48,10 @@ export function buildApp({
   store,
   analytics,
   features = { reminders: false },
+  adapter,
   logger = true,
   trustProxy = false,
+  createLimitPerMinute = 10,
   probeTimeoutMs = 1000,
 }: AppOptions) {
   // Requests are small JSON bodies; anything bigger is not from our client.
@@ -67,7 +72,7 @@ export function buildApp({
     });
 
     // Creating a team is the one write anyone can do without joining anything.
-    api.post("/retros", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
+    api.post("/retros", { config: { rateLimit: { max: createLimitPerMinute, timeWindow: "1 minute" } } }, async (req, reply) => {
       const body = createRetroSchema.safeParse(req.body);
       if (!body.success) return reply.code(400).send({ error: "invalid" });
       const created = await store.createRetro(body.data.teamName);
@@ -85,6 +90,7 @@ export function buildApp({
   const io: RealtimeServer = new Server(app.server, {
     cors: { origin: webOrigin },
     maxHttpBufferSize: 16 * 1024,
+    ...(adapter ? { adapter } : {}),
   });
   registerRealtime(io, store, analytics, features, app.log);
 

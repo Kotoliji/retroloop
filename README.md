@@ -21,7 +21,7 @@ completed in most teams, and existing tools stop at the board. See
 - [x] **Phase 3** — action items with owner and due date, review in the next retro, follow-through score, export
 - [x] **Phase 4** — launch-ready: landing page in English, Ukrainian, Russian and Portuguese, end-of-retro survey, anonymous analytics, privacy page and retention, rate limits, production Docker + Caddy
 - [x] **Phase 5** — retro formats (classic, Start-Stop-Continue, Mad-Sad-Glad, 4 Ls, Sailboat) and opt-in e-mail reminders for owners
-- [ ] Phase 6 — scaling across instances with Redis, end-to-end tests, load test
+- [ ] Phase 6 — scaling across instances with Redis and a load test (done), end-to-end tests
 - [ ] Phase 7 — admin stats from the survey and analytics
 
 ## Stack
@@ -77,8 +77,14 @@ within a second if one of them is down.
   resent after a dropped connection is recognised instead of stored twice.
 - **Reconnects resync.** Every (re)connect re-joins the retro and replaces local
   state with the server's snapshot, so nothing missed while offline is lost.
-- **Presence per socket.** A participant with two tabs open stays online until the
-  last one closes.
+- **Presence from live sockets.** A participant is online while at least one of
+  their sockets is in the room, on any server instance — two tabs stay online
+  until the last one closes, and an instance that dies takes its sockets with it.
+- **Scales out.** Instances share rooms through the Socket.IO Redis adapter; clients
+  use WebSockets only, so the proxy needs no sticky sessions. Under 500 concurrent
+  participants on two instances, a card reaches everyone else in 21 ms (p50) /
+  130 ms (p95) — see [docs/PERFORMANCE.md](docs/PERFORMANCE.md) for the setup and
+  the optimisation that took p95 down from 692 ms.
 
 ## How a retro runs
 

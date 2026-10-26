@@ -5,6 +5,16 @@
 	reverse_proxy web:3000
 }
 
+# Every running server instance is found through Docker's DNS, so scaling is
+# `SERVER_REPLICAS=3`. Clients use WebSockets only, so no sticky sessions are
+# needed; Redis connects the instances.
 {$API_ADDRESS} {
-	reverse_proxy server:4000
+	reverse_proxy {
+		dynamic a {
+			name server
+			port 4000
+			refresh 5s
+		}
+		lb_policy round_robin
+	}
 }

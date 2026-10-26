@@ -33,7 +33,6 @@ import type { Server, Socket } from "socket.io";
 import type { z } from "zod";
 import type { Analytics } from "./analytics";
 import { TokenBucket } from "./rate-limit";
-import { Presence } from "./retro/presence";
 import { STORE_FAILURES, type RetroStore, type StoreFailure } from "./retro/store";
 import { viewAction, viewCards, viewMeta, type CardRow, type RetroRow } from "./retro/views";
 
@@ -46,6 +45,8 @@ export type RealtimeServer = Server<ClientToServerEvents, ServerToClientEvents, 
 type RealtimeSocket = Socket<ClientToServerEvents, ServerToClientEvents, object, SocketData>;
 
 const room = (retroId: string) => `retro:${retroId}`;
+/** Every socket of one participant in one retro (several tabs, devices). */
+const own = (retroId: string, participantId: string) => `retro:${retroId}:p:${participantId}`;
 
 /** Per socket: bursts of 40 events, 10 a second sustained — far above what a person clicks. */
 const SOCKET_BURST = 40;
@@ -69,7 +70,6 @@ export function registerRealtime(
   features: { reminders: boolean },
   log: FastifyBaseLogger,
 ) {
-  const presence = new Presence();
   const buckets = new WeakMap<RealtimeSocket, TokenBucket>();
   const allowed = (socket: RealtimeSocket) => {
     let bucket = buckets.get(socket);
@@ -77,28 +77,42 @@ export function registerRealtime(
     return bucket.take();
   };
 
-  async function participantsOf(retroId: string): Promise<ParticipantView[]> {
-    const online = presence.online(retroId);
-    const all = await store.participants(retroId);
-    return all.map((p) => ({ ...p, online: online.has(p.id) }));
-  }
-
-  /** Every socket in the room, with the participant it belongs to. */
+  /**
+   * Every socket in the room, with the participant it belongs to. With the Redis
+   * adapter this asks every server instance, so it is also the presence list:
+   * a participant is online while at least one of their sockets is in the room,
+   * and the sockets of an instance that dies simply stop being counted.
+   */
   async function viewers(retroId: string) {
     const sockets = await io.in(room(retroId)).fetchSockets();
     return sockets.flatMap((s) => (s.data.participantId ? [{ socket: s, viewerId: s.data.participantId }] : []));
   }
 
+  async function participantsOf(retroId: string): Promise<ParticipantView[]> {
+    const [all, here] = await Promise.all([store.participants(retroId), viewers(retroId)]);
+    const online = new Set(here.map((v) => v.viewerId));
+    return all.map((p) => ({ ...p, online: online.has(p.id) }));
+  }
+
   /** Sends one changed card to each viewer, as that viewer may see it. */
   async function broadcastCard(retroId: string, card: CardRow) {
-    const [retro, votes, targets] = await Promise.all([
-      store.getRetro(retroId),
-      store.votesOn(card.id),
-      viewers(retroId),
-    ]);
+    const [retro, votes] = await Promise.all([store.getRetro(retroId), store.votesOn(card.id)]);
     if (!retro) return;
-    for (const { socket, viewerId } of targets) {
-      socket.emit("card:upserted", viewCards([card], votes, viewerId, retro.stage as Stage)[0]);
+    const stage = retro.stage as Stage;
+
+    // Fast path: without votes, everyone but the author sees the same view, so
+    // two broadcasts reach every instance without asking who is connected.
+    if (votes.length === 0) {
+      const authorRoom = own(retroId, card.authorId);
+      const othersView = viewCards([card], votes, "", stage)[0];
+      io.to(room(retroId)).except(authorRoom).emit("card:upserted", othersView);
+      io.to(authorRoom).emit("card:upserted", viewCards([card], votes, card.authorId, stage)[0]);
+      return;
+    }
+
+    // With votes (after stepping back from voting), each viewer's own vote count differs.
+    for (const { socket, viewerId } of await viewers(retroId)) {
+      socket.emit("card:upserted", viewCards([card], votes, viewerId, stage)[0]);
     }
   }
 
@@ -165,9 +179,11 @@ export function registerRealtime(
     const { retroId, participantId } = socket.data;
     if (!retroId || !participantId) return;
     socket.data = {};
-    await socket.leave(room(retroId));
-    if (presence.remove(retroId, participantId)) {
-      io.to(room(retroId)).emit("participants:changed", await participantsOf(retroId));
+    await Promise.all([socket.leave(room(retroId)), socket.leave(own(retroId, participantId))]);
+    const participants = await participantsOf(retroId);
+    // Another tab of the same participant keeps them online: nothing changed.
+    if (!participants.find((p) => p.id === participantId)?.online) {
+      io.to(room(retroId)).emit("participants:changed", participants);
     }
   }
 
@@ -204,8 +220,7 @@ export function registerRealtime(
 
         const { participant } = joined;
         socket.data = { retroId, participantId: participant.id };
-        await socket.join(room(retroId));
-        presence.add(retroId, participant.id);
+        await socket.join([room(retroId), own(retroId, participant.id)]);
 
         const [board, participants] = await Promise.all([store.board(retroId), participantsOf(retroId)]);
         if (!board) throw new Failure("not_found");

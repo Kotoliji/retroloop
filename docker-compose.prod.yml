@@ -32,12 +32,15 @@ services:
       context: .
       dockerfile: apps/server/Dockerfile
     restart: unless-stopped
+    deploy:
+      replicas: ${SERVER_REPLICAS:-1}
     environment:
       PORT: 4000
       DATABASE_URL: postgresql://retro:${POSTGRES_PASSWORD}@postgres:5432/retro
       REDIS_URL: redis://redis:6379
       WEB_ORIGIN: ${WEB_URL:?set WEB_URL}
       TRUST_PROXY: "true"
+      CREATE_LIMIT_PER_MINUTE: ${CREATE_LIMIT_PER_MINUTE:-10}
       SMTP_URL: ${SMTP_URL:-}
       SMTP_FROM: ${SMTP_FROM:-}
     depends_on:

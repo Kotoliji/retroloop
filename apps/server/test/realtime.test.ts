@@ -260,6 +260,22 @@ describe("voting", () => {
     expect((await totals)[0]).toMatchObject({ myVotes: 1, votes: 2 });
   });
 
+  it("still sends each viewer their own votes when a voted card changes", async () => {
+    const { alice, bob } = await setup();
+    const card = await addCard(alice, "Slow builds");
+    await setStage(alice, "group");
+    await setStage(alice, "vote");
+    ok(await bob.emitWithAck("vote:add", { id: card.id }));
+    ok(await bob.emitWithAck("vote:add", { id: card.id }));
+    await setStage(alice, "group"); // stepping back makes cards editable again
+
+    const seenByBob = until(bob, "card:upserted", (c) => c.text === "Slow builds and tests");
+    const seenByAlice = until(alice, "card:upserted", (c) => c.text === "Slow builds and tests");
+    ok(await alice.emitWithAck("card:edit", { id: card.id, text: "Slow builds and tests" }));
+    expect(await seenByBob).toMatchObject({ mine: false, myVotes: 2 });
+    expect(await seenByAlice).toMatchObject({ mine: true, myVotes: 0 });
+  });
+
   it("only counts votes on the lead card of a group, during the vote stage", async () => {
     const { alice, bob } = await setup();
     const lead = await addCard(alice, "Lead");

@@ -4,6 +4,8 @@ import type {
   Result,
   ServerToClientEvents,
 } from "@retro/shared";
+import { createAdapter } from "@socket.io/redis-adapter";
+import { createClient } from "redis";
 import { io as connect, type Socket } from "socket.io-client";
 import { afterAll, afterEach, inject } from "vitest";
 import { createAnalytics } from "../src/analytics";
@@ -24,8 +26,9 @@ afterEach(async () => {
   await Promise.all(cleanups.splice(0).map((fn) => fn()));
 });
 
-export function buildTestApp(probes: HealthProbes = up) {
+export function buildTestApp(probes: HealthProbes = up, adapter?: ReturnType<typeof createAdapter>) {
   const { app } = buildApp({
+    adapter,
     webOrigin: "http://localhost:3001",
     probes,
     store,
@@ -41,6 +44,16 @@ export function buildTestApp(probes: HealthProbes = up) {
 /** Starts a server on a random port and returns its address. */
 export async function startServer() {
   return buildTestApp().listen({ port: 0, host: "127.0.0.1" });
+}
+
+/** Starts a server instance that shares rooms with other instances through Redis. */
+export async function startScaledServer() {
+  const pub = createClient({ url: inject("redisUrl") });
+  const sub = pub.duplicate();
+  await Promise.all([pub.connect(), sub.connect()]);
+  const address = await buildTestApp(up, createAdapter(pub, sub)).listen({ port: 0, host: "127.0.0.1" });
+  cleanups.push(() => Promise.allSettled([pub.quit(), sub.quit()]));
+  return address;
 }
 
 export async function client(address: string): Promise<Client> {

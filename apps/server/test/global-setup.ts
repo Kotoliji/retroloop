@@ -5,6 +5,7 @@ import type { TestProject } from "vitest/node";
 declare module "vitest" {
   export interface ProvidedContext {
     databaseUrl: string;
+    redisUrl: string;
   }
 }
 
@@ -27,4 +28,5 @@ export default function setup(project: TestProject) {
     stdio: "pipe",
   });
   project.provide("databaseUrl", databaseUrl);
+  project.provide("redisUrl", process.env.REDIS_URL ?? "redis://127.0.0.1:6380");
 }
