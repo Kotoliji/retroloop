@@ -27,6 +27,8 @@ const action = (text: string, extra: Partial<ActionItemView> = {}): ActionItemVi
   sourceCardId: null,
   fromThisRetro: true,
   reviewedHere: false,
+  reminder: false,
+  reminderSent: false,
   createdAt: "2026-10-26T10:00:00Z",
   ...extra,
 });

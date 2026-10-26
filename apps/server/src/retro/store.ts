@@ -7,6 +7,7 @@ import {
   type CreatedRetro,
   type EditActionRequest,
   type EditCardRequest,
+  type RemindRequest,
   type ReviewActionRequest,
   type RetroSummary,
   type Stage,
@@ -369,6 +370,16 @@ export function createRetroStore(prisma: Prisma) {
     async deleteAction(retroId: string, id: string): Promise<true | StoreFailure> {
       if (!ACTION_STAGES.includes((await stageOf(retroId)) as Stage)) return "wrong_stage";
       const { count } = await prisma.actionItem.deleteMany({ where: { id, retroId } });
+      return count ? true : "not_found";
+    },
+
+    /** Sets or cancels the e-mail reminder for an open item agreed in this retro. */
+    async setReminder(retroId: string, { id, email, locale }: RemindRequest): Promise<true | StoreFailure> {
+      if (!ACTION_STAGES.includes((await stageOf(retroId)) as Stage)) return "wrong_stage";
+      const { count } = await prisma.actionItem.updateMany({
+        where: { id, retroId, status: "open", reminderSentAt: null },
+        data: { reminderEmail: email, reminderLocale: email ? (locale ?? null) : null },
+      });
       return count ? true : "not_found";
     },
 

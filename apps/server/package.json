@@ -19,6 +19,7 @@
     "@prisma/client": "7.10.1",
     "@retro/shared": "*",
     "fastify": "^5.12.7",
+    "nodemailer": "^10.2.1",
     "prisma": "7.10.1",
     "redis": "^6.3.0",
     "socket.io": "^4.8.4",
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@types/node": "^24",
+    "@types/nodemailer": "^8.0.2",
     "socket.io-client": "^4.8.4",
     "tsup": "^9.0.0",
     "tsx": "^4.23.15",

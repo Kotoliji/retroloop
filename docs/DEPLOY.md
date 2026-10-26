@@ -26,6 +26,10 @@ cp .env.prod.example .env.prod
 docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
 ```
 
+E-mail reminders for action items are optional: set `SMTP_URL` (for example
+`smtp://user:password@smtp-relay.brevo.com:587`) and `SMTP_FROM` in `.env.prod`.
+Without them the reminder button does not appear.
+
 The server applies database migrations every time it starts, so there is no
 separate migration step. Check that it is up:
 

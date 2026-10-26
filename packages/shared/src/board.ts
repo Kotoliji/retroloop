@@ -129,6 +129,9 @@ export interface ActionItemView {
   fromThisRetro: boolean;
   /** An earlier item whose outcome was already decided in this retro's review. */
   reviewedHere: boolean;
+  /** Someone asked for an e-mail reminder; the address itself is never sent to browsers. */
+  reminder: boolean;
+  reminderSent: boolean;
   createdAt: string;
 }
 
@@ -153,4 +156,6 @@ export interface RetroSnapshot {
   stats: TeamStats;
   /** This viewer's own survey answer, if they gave one. */
   survey: SurveyAnswer | null;
+  /** What this server can do; e-mail reminders need SMTP to be configured. */
+  features: { reminders: boolean };
 }

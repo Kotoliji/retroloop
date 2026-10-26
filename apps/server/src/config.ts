@@ -10,6 +10,9 @@ const envSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
+  /** e.g. smtp://user:pass@smtp.example.com:587 — without it, e-mail reminders are off. */
+  SMTP_URL: z.preprocess((v) => v || undefined, z.string().url().optional()),
+  SMTP_FROM: z.preprocess((v) => v || undefined, z.string().default("Retroloop <no-reply@localhost>")),
 });
 
 export type Config = z.infer<typeof envSchema>;

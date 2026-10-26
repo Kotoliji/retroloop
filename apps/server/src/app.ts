@@ -17,6 +17,7 @@ export interface AppOptions {
   probes: HealthProbes;
   store: RetroStore;
   analytics: Analytics;
+  features?: { reminders: boolean };
   logger?: boolean;
   trustProxy?: boolean;
   probeTimeoutMs?: number;
@@ -43,6 +44,7 @@ export function buildApp({
   probes,
   store,
   analytics,
+  features = { reminders: false },
   logger = true,
   trustProxy = false,
   probeTimeoutMs = 1000,
@@ -84,7 +86,7 @@ export function buildApp({
     cors: { origin: webOrigin },
     maxHttpBufferSize: 16 * 1024,
   });
-  registerRealtime(io, store, analytics, app.log);
+  registerRealtime(io, store, analytics, features, app.log);
 
   app.addHook("onClose", async () => {
     await io.close();

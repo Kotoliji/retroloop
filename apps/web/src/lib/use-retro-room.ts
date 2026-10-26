@@ -7,6 +7,7 @@ import {
   type ColumnId,
   type EditActionRequest,
   type Result,
+  type RemindRequest,
   type ReviewActionRequest,
   type Stage,
   type SurveyRequest,
@@ -252,6 +253,10 @@ export function useRetroRoom(retroId: string, name: string) {
     ),
     remove: useCallback(
       (id: string) => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("action:delete", { id })),
+      [send],
+    ),
+    remind: useCallback(
+      (request: RemindRequest) => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("action:remind", request)),
       [send],
     ),
     review: useCallback(

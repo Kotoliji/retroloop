@@ -21,6 +21,7 @@ interface RetroState {
   actions: ActionItemView[];
   stats: TeamStats;
   survey: SurveyAnswer | null;
+  features: { reminders: boolean };
   /** Server clock minus local clock, in milliseconds. */
   clockOffset: number;
 
@@ -45,6 +46,7 @@ export const useRetroStore = create<RetroState>()((set) => ({
   actions: [],
   stats: { done: 0, total: 0 },
   survey: null,
+  features: { reminders: false },
   clockOffset: 0,
 
   reset: () =>
@@ -71,6 +73,7 @@ export const useRetroStore = create<RetroState>()((set) => ({
       actions: snapshot.actions,
       stats: snapshot.stats,
       survey: snapshot.survey,
+      features: snapshot.features,
     }),
   setMeta: (retro) => set({ retro }),
   setCards: (cards) => set({ cards }),

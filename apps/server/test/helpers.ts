@@ -30,6 +30,7 @@ export function buildTestApp(probes: HealthProbes = up) {
     probes,
     store,
     analytics,
+    features: { reminders: true },
     logger: false,
     probeTimeoutMs: 50,
   });

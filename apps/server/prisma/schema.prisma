@@ -114,6 +114,10 @@ model ActionItem {
   status            String    @default("open")
   /// The retro whose review last changed this item, so it stays visible there.
   reviewedInRetroId String?
+  /// Where to send the one reminder before the due date. Deleted once it is sent.
+  reminderEmail     String?
+  reminderLocale    String?
+  reminderSentAt    DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

@@ -241,7 +241,7 @@
     "updated": "Last updated: {date}",
     "intro": "Retroloop is built to need as little data as possible. There are no accounts, no tracking cookies and no ads.",
     "storeTitle": "What is stored",
-    "store": "The team name, the names people type when they join, cards, votes, action items with their owners and due dates, and answers to the end-of-retro survey. Nothing else is asked for: no email, no password.",
+    "store": "The team name, the names people type when they join, cards, votes, action items with their owners and due dates, and answers to the end-of-retro survey. Nothing else is asked for: no email, no password. Only if someone asks for an e-mail reminder for an action item, that address is stored — and deleted as soon as the one reminder has been sent.",
     "browserTitle": "In your browser",
     "browser": "Your browser keeps your name and a secret key per retro (so a reload brings you back as yourself) in local storage. These are not cookies and are never used for tracking.",
     "analyticsTitle": "Anonymous usage counts",
@@ -263,5 +263,14 @@
     "mad-sad-glad": "Mad, Sad, Glad",
     "four-ls": "4 Ls",
     "sailboat": "Sailboat"
+  },
+  "Reminder": {
+    "ask": "Email a reminder",
+    "label": "E-mail for the reminder",
+    "save": "Remind",
+    "hint": "One e-mail the day before it's due. The address is deleted right after.",
+    "set": "Reminder set",
+    "cancel": "Cancel reminder",
+    "sent": "Reminder sent"
   }
 }

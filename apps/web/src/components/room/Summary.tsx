@@ -17,6 +17,7 @@ import {
 import { useIsFacilitator, useRetroStore } from "@/lib/retro-store";
 import { saveGithubRepo, saveHostKey, savedGithubRepo } from "@/lib/storage";
 import type { RoomActions } from "@/lib/use-retro-room";
+import { ReminderControl } from "./ReminderControl";
 import { SurveyForm } from "./SurveyForm";
 import { TeamScore } from "./TeamScore";
 
@@ -101,7 +102,7 @@ export function Summary({ actions }: { actions: RoomActions }) {
               meta={meta}
               labels={labels}
               repo={isGithubRepo(repo) ? repo : null}
-              onExport={actions.track}
+              actions={actions}
             />
           ))}
         </ul>
@@ -195,10 +196,11 @@ interface AgreedItemProps {
   meta: RetroMeta;
   labels: ExportLabels;
   repo: string | null;
-  onExport: RoomActions["track"];
+  actions: RoomActions;
 }
 
-function AgreedItem({ item, meta, labels, repo, onExport }: AgreedItemProps) {
+function AgreedItem({ item, meta, labels, repo, actions }: AgreedItemProps) {
+  const onExport = actions.track;
   const t = useTranslations("Summary");
   const tc = useTranslations("Common");
   const locale = useLocale();
@@ -234,6 +236,7 @@ function AgreedItem({ item, meta, labels, repo, onExport }: AgreedItemProps) {
           </a>
         )}
       </div>
+      <ReminderControl item={item} actions={actions} />
     </li>
   );
 }

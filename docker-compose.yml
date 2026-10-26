@@ -17,6 +17,13 @@ services:
       timeout: 3s
       retries: 10
 
+  # Catches e-mail reminders in development: open http://localhost:8025 to read them.
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
   redis:
     image: redis:8-alpine
     ports:

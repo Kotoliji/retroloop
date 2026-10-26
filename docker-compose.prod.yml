@@ -38,6 +38,8 @@ services:
       REDIS_URL: redis://redis:6379
       WEB_ORIGIN: ${WEB_URL:?set WEB_URL}
       TRUST_PROXY: "true"
+      SMTP_URL: ${SMTP_URL:-}
+      SMTP_FROM: ${SMTP_FROM:-}
     depends_on:
       postgres:
         condition: service_healthy

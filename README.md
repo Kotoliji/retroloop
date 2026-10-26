@@ -20,7 +20,7 @@ completed in most teams, and existing tools stop at the board. See
 - [x] **Phase 2** — retro flow: facilitator, anonymous writing → reveal and group → vote → discuss, timer
 - [x] **Phase 3** — action items with owner and due date, review in the next retro, follow-through score, export
 - [x] **Phase 4** — launch-ready: landing page in English, Ukrainian, Russian and Portuguese, end-of-retro survey, anonymous analytics, privacy page and retention, rate limits, production Docker + Caddy
-- [ ] Phase 5 — retro formats (done: classic, Start-Stop-Continue, Mad-Sad-Glad, 4 Ls, Sailboat), owner reminders
+- [x] **Phase 5** — retro formats (classic, Start-Stop-Continue, Mad-Sad-Glad, 4 Ls, Sailboat) and opt-in e-mail reminders for owners
 - [ ] Phase 6 — scaling across instances with Redis, end-to-end tests, load test
 - [ ] Phase 7 — admin stats from the survey and analytics
 
@@ -55,7 +55,7 @@ Requires Node.js 22.12+ (24 recommended) and Docker.
 ```bash
 cp .env.example .env
 npm install
-npm run db:up        # PostgreSQL on :5433, Redis on :6380
+npm run db:up        # PostgreSQL on :5433, Redis on :6380, Mailpit on :8025
 npm run db:migrate
 npm run dev          # web on http://localhost:3001, server on http://localhost:4000
 ```
@@ -101,6 +101,11 @@ The **follow-through score** — the share of action items from earlier retros t
 actually got done — is shown at the review and at the end of every retro. It is
 also the product's success metric: most teams finish under half of their retro
 action items (see [docs/RESEARCH.md](docs/RESEARCH.md)).
+
+Owners can ask for **one e-mail reminder** the day before an item is due, in their
+language; the address is deleted as soon as it is sent and never reaches other
+browsers. Reminders work with any SMTP provider and are simply hidden when none is
+configured (in development they land in Mailpit at http://localhost:8025).
 
 Agreed items leave the tool the way teams already work: **Markdown** for a wiki
 or chat, **CSV** that Jira's importer maps without setup, a prefilled **GitHub

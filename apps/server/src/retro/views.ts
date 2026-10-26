@@ -47,6 +47,8 @@ export interface ActionRow {
   status: string;
   sourceCardId: string | null;
   reviewedInRetroId: string | null;
+  reminderEmail: string | null;
+  reminderSentAt: Date | null;
   createdAt: Date;
 }
 
@@ -109,6 +111,8 @@ export function viewAction(action: ActionRow, retroId: string): ActionItemView {
     sourceCardId: action.sourceCardId,
     fromThisRetro: action.retroId === retroId,
     reviewedHere: action.reviewedInRetroId === retroId,
+    reminder: action.reminderEmail !== null,
+    reminderSent: action.reminderSentAt !== null,
     createdAt: action.createdAt.toISOString(),
   };
 }

@@ -6,6 +6,7 @@ import {
   editActionSchema,
   editCardSchema,
   emptySchema,
+  remindSchema,
   reviewActionSchema,
   surveySchema,
   trackSchema,
@@ -65,6 +66,7 @@ export function registerRealtime(
   io: RealtimeServer,
   store: RetroStore,
   analytics: Analytics,
+  features: { reminders: boolean },
   log: FastifyBaseLogger,
 ) {
   const presence = new Presence();
@@ -226,6 +228,7 @@ export function registerRealtime(
             actions,
             stats,
             survey,
+            features,
           },
         };
       }),
@@ -358,6 +361,9 @@ export function registerRealtime(
     actionEvent("action:edit", editActionSchema, (retroId, req) => store.editAction(retroId, req));
     actionEvent("action:delete", deleteActionSchema, (retroId, { id }) => store.deleteAction(retroId, id));
     actionEvent("action:review", reviewActionSchema, (retroId, req) => store.reviewAction(retroId, req));
+    actionEvent("action:remind", remindSchema, (retroId, req) =>
+      features.reminders ? store.setReminder(retroId, req) : Promise.resolve("forbidden" as const),
+    );
 
     socket.on(
       "survey:submit",

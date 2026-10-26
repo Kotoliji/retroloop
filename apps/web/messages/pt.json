@@ -241,7 +241,7 @@
     "updated": "Última atualização: {date}",
     "intro": "O Retroloop foi feito para precisar do mínimo de dados possível. Sem contas, sem cookies de rastreio e sem anúncios.",
     "storeTitle": "O que é guardado",
-    "store": "O nome da equipa, os nomes que as pessoas escrevem ao entrar, cartões, votos, ações com responsáveis e datas, e as respostas ao inquérito no fim da retro. Não pedimos mais nada: nem email, nem palavra-passe.",
+    "store": "O nome da equipa, os nomes que as pessoas escrevem ao entrar, cartões, votos, ações com responsáveis e datas, e as respostas ao inquérito no fim da retro. Não pedimos mais nada: nem email, nem palavra-passe. Só se alguém pedir um lembrete por e-mail para uma ação é que esse endereço é guardado — e é apagado assim que o único lembrete é enviado.",
     "browserTitle": "No seu browser",
     "browser": "O browser guarda o seu nome e uma chave secreta por retro (para que, ao recarregar, volte a ser você) no local storage. Não são cookies e nunca são usados para rastreio.",
     "analyticsTitle": "Contagens de uso anónimas",
@@ -263,5 +263,14 @@
     "mad-sad-glad": "Irritou, Entristeceu, Alegrou",
     "four-ls": "4 Ls",
     "sailboat": "Veleiro"
+  },
+  "Reminder": {
+    "ask": "Lembrar por e-mail",
+    "label": "E-mail para o lembrete",
+    "save": "Lembrar",
+    "hint": "Um e-mail na véspera do prazo. O endereço é apagado logo a seguir.",
+    "set": "Lembrete definido",
+    "cancel": "Cancelar lembrete",
+    "sent": "Lembrete enviado"
   }
 }

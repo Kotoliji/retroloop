@@ -111,6 +111,14 @@ export type ReviewActionRequest = z.infer<typeof reviewActionSchema>;
 
 export const deleteActionSchema = z.object({ id: z.uuid() });
 
+export const remindSchema = z.object({
+  id: z.uuid(),
+  /** null cancels a reminder that has not been sent yet. */
+  email: z.email().max(254).nullable(),
+  locale: z.string().max(10).optional(),
+});
+export type RemindRequest = z.infer<typeof remindSchema>;
+
 export const surveySchema = z.object({
   rating: z.number().int().min(1).max(5),
   comment: z
@@ -188,6 +196,7 @@ export interface ClientToServerEvents {
   "action:edit": (request: EditActionRequest, ack: Ack<null>) => void;
   "action:delete": (request: { id: string }, ack: Ack<null>) => void;
   "action:review": (request: ReviewActionRequest, ack: Ack<null>) => void;
+  "action:remind": (request: RemindRequest, ack: Ack<null>) => void;
   "survey:submit": (request: SurveyRequest, ack: Ack<SurveyAnswer>) => void;
   /** Facilitator only: deletes the retro and everything in it. */
   "retro:delete": (request: Record<string, never>, ack: Ack<null>) => void;
