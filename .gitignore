@@ -6,3 +6,4 @@ coverage/
 .env
 .env.local
 apps/server/src/generated/
+.env.prod

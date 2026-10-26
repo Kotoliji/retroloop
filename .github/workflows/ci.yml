@@ -35,3 +35,11 @@ jobs:
       - run: npm run lint
       - run: npm test
       - run: npm run build
+
+  docker:
+    # The production images build from a clean checkout.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -f apps/server/Dockerfile -t retroloop-server .
+      - run: docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_SERVER_URL=https://api.example.com -t retroloop-web .

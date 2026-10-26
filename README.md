@@ -19,7 +19,7 @@ completed in most teams, and existing tools stop at the board. See
 - [x] **Phase 1** — live board: create a retro, share the link, cards appear for everyone instantly
 - [x] **Phase 2** — retro flow: facilitator, anonymous writing → reveal and group → vote → discuss, timer
 - [x] **Phase 3** — action items with owner and due date, review in the next retro, follow-through score, export
-- [ ] Phase 4 — public launch: landing page, i18n, analytics, end-of-retro survey
+- [x] **Phase 4** — launch-ready: landing page, English + Ukrainian, end-of-retro survey, anonymous analytics, privacy page and retention, rate limits, production Docker + Caddy
 - [ ] Phase 5+ — templates, reminders, scaling across instances, e2e tests, admin stats
 
 ## Stack
@@ -30,6 +30,8 @@ completed in most teams, and existing tools stop at the board. See
 | Realtime server | Node.js 24, Fastify 5, Socket.IO 4 |
 | Data | PostgreSQL 18 + Prisma 7, Redis 8 |
 | Shared contract | `@retro/shared` — socket events and payload schemas (zod), used by both sides |
+| i18n | next-intl, locale-prefixed routes (`/en`, `/uk`), message keys type-checked |
+| Production | Docker images for both apps, Caddy with automatic HTTPS, see [docs/DEPLOY.md](docs/DEPLOY.md) |
 | Tooling | npm workspaces, Vitest, ESLint, tsup, Docker Compose, GitHub Actions |
 
 ```
@@ -107,6 +109,21 @@ hash); only the facilitator moves between stages, runs the timer and can hand th
 role over. Card authors are never sent to other participants in any stage — the
 client only learns "mine" or "not mine". The timer runs on the server clock; each
 browser corrects for its own clock offset, measured on join.
+
+## Feedback and privacy
+
+Every retro ends with a one-question survey — *how useful was this retro?* — with
+an optional comment and explicit consent to quote it without a name. Together
+with anonymous product events (a retro was created, a stage was reached, an
+export was used — never who, never what was written) this is how the product
+measures whether it helps.
+
+There are no accounts, no tracking cookies and no ads. A test checks that no
+team name, participant name, card text or comment ever ends up in an analytics
+event. Teams with no retro for a year are deleted automatically, and a
+facilitator can delete a retro at any time. Public endpoints are rate-limited:
+10 new teams a minute per address, and each socket gets a token bucket (bursts
+of 40 events, 10 a second sustained).
 
 ## Checks
 

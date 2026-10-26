@@ -1,4 +1,5 @@
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 import { createRetroSchema, retroIdSchema, type HealthStatus } from "@retro/shared";
 import Fastify from "fastify";
 import { Server } from "socket.io";
@@ -17,6 +18,7 @@ export interface AppOptions {
   store: RetroStore;
   analytics: Analytics;
   logger?: boolean;
+  trustProxy?: boolean;
   probeTimeoutMs?: number;
 }
 
@@ -42,36 +44,46 @@ export function buildApp({
   store,
   analytics,
   logger = true,
+  trustProxy = false,
   probeTimeoutMs = 1000,
 }: AppOptions) {
-  const app = Fastify({ logger });
+  // Requests are small JSON bodies; anything bigger is not from our client.
+  const app = Fastify({ logger, trustProxy, bodyLimit: 16 * 1024 });
   app.register(cors, { origin: webOrigin });
+  app.register(rateLimit, { max: 300, timeWindow: "1 minute" });
 
-  app.get("/health", async (_req, reply): Promise<HealthStatus> => {
-    const [database, redis] = await Promise.all([
-      probe(probes.database, probeTimeoutMs),
-      probe(probes.redis, probeTimeoutMs),
-    ]);
-    const healthy = database === "ok" && redis === "ok";
-    reply.code(healthy ? 200 : 503);
-    return { status: healthy ? "ok" : "degraded", checks: { database, redis } };
+  // Routes live in a plugin registered after rate-limit, so its hooks apply to them.
+  app.register(async (api) => {
+    api.get("/health", async (_req, reply): Promise<HealthStatus> => {
+      const [database, redis] = await Promise.all([
+        probe(probes.database, probeTimeoutMs),
+        probe(probes.redis, probeTimeoutMs),
+      ]);
+      const healthy = database === "ok" && redis === "ok";
+      reply.code(healthy ? 200 : 503);
+      return { status: healthy ? "ok" : "degraded", checks: { database, redis } };
+    });
+
+    // Creating a team is the one write anyone can do without joining anything.
+    api.post("/retros", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req, reply) => {
+      const body = createRetroSchema.safeParse(req.body);
+      if (!body.success) return reply.code(400).send({ error: "invalid" });
+      const created = await store.createRetro(body.data.teamName);
+      analytics.track("team_created", { retroId: created.id });
+      return reply.code(201).send(created);
+    });
+
+    api.get<{ Params: { id: string } }>("/retros/:id", async (req, reply) => {
+      const id = retroIdSchema.safeParse(req.params.id);
+      const retro = id.success ? await store.findRetro(id.data) : null;
+      return retro ?? reply.code(404).send({ error: "not_found" });
+    });
   });
 
-  app.post("/retros", async (req, reply) => {
-    const body = createRetroSchema.safeParse(req.body);
-    if (!body.success) return reply.code(400).send({ error: "invalid" });
-    const created = await store.createRetro(body.data.teamName);
-    analytics.track("team_created", { retroId: created.id });
-    return reply.code(201).send(created);
+  const io: RealtimeServer = new Server(app.server, {
+    cors: { origin: webOrigin },
+    maxHttpBufferSize: 16 * 1024,
   });
-
-  app.get<{ Params: { id: string } }>("/retros/:id", async (req, reply) => {
-    const id = retroIdSchema.safeParse(req.params.id);
-    const retro = id.success ? await store.findRetro(id.data) : null;
-    return retro ?? reply.code(404).send({ error: "not_found" });
-  });
-
-  const io: RealtimeServer = new Server(app.server, { cors: { origin: webOrigin } });
   registerRealtime(io, store, analytics, app.log);
 
   app.addHook("onClose", async () => {

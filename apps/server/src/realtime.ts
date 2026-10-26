@@ -30,6 +30,7 @@ import type { FastifyBaseLogger } from "fastify";
 import type { Server, Socket } from "socket.io";
 import type { z } from "zod";
 import type { Analytics } from "./analytics";
+import { TokenBucket } from "./rate-limit";
 import { Presence } from "./retro/presence";
 import { STORE_FAILURES, type RetroStore, type StoreFailure } from "./retro/store";
 import { viewAction, viewCards, viewMeta, type CardRow, type RetroRow } from "./retro/views";
@@ -43,6 +44,10 @@ export type RealtimeServer = Server<ClientToServerEvents, ServerToClientEvents, 
 type RealtimeSocket = Socket<ClientToServerEvents, ServerToClientEvents, object, SocketData>;
 
 const room = (retroId: string) => `retro:${retroId}`;
+
+/** Per socket: bursts of 40 events, 10 a second sustained — far above what a person clicks. */
+const SOCKET_BURST = 40;
+const SOCKET_PER_SECOND = 10;
 
 class Failure extends Error {
   constructor(readonly code: ErrorCode) {
@@ -62,6 +67,12 @@ export function registerRealtime(
   log: FastifyBaseLogger,
 ) {
   const presence = new Presence();
+  const buckets = new WeakMap<RealtimeSocket, TokenBucket>();
+  const allowed = (socket: RealtimeSocket) => {
+    let bucket = buckets.get(socket);
+    if (!bucket) buckets.set(socket, (bucket = new TokenBucket(SOCKET_BURST, SOCKET_PER_SECOND)));
+    return bucket.take();
+  };
 
   async function participantsOf(retroId: string): Promise<ParticipantView[]> {
     const online = presence.online(retroId);
@@ -121,6 +132,7 @@ export function registerRealtime(
   ) {
     return async (payload: unknown, ack: Ack<T>) => {
       if (typeof ack !== "function") return;
+      if (!allowed(socket)) return ack({ ok: false, error: "rate_limited" });
       const parsed = schema.safeParse(payload);
       if (!parsed.success) return ack({ ok: false, error: "invalid" });
       try {
@@ -369,7 +381,7 @@ export function registerRealtime(
     socket.on("analytics:track", (payload) => {
       const parsed = trackSchema.safeParse(payload);
       const retroId = socket.data.retroId;
-      if (parsed.success && retroId) analytics.track(parsed.data.name, { retroId });
+      if (parsed.success && retroId && allowed(socket)) analytics.track(parsed.data.name, { retroId });
     });
 
     socket.on("disconnect", () => {

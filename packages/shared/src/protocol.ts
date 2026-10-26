@@ -134,6 +134,7 @@ export type ErrorCode =
   | "wrong_stage"
   | "no_votes_left"
   | "too_many_actions"
+  | "rate_limited"
   | "internal";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: ErrorCode };

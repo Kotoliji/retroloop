@@ -17,6 +17,7 @@ const analytics = createAnalytics(prisma, (err, name) => app.log.warn({ err, nam
 
 const { app } = buildApp({
   webOrigin: config.WEB_ORIGIN,
+  trustProxy: config.TRUST_PROXY,
   store,
   analytics,
   probes: {

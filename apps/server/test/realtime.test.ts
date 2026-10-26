@@ -283,3 +283,18 @@ describe("voting", () => {
     expect(await focused).toMatchObject({ votesPerPerson: 5, focusCardId: card.id });
   });
 });
+
+describe("flooding", () => {
+  it("slows down one noisy socket without dropping it", async () => {
+    const { alice } = await setup();
+    const results = await Promise.all(
+      Array.from({ length: 100 }, (_, i) =>
+        alice.emitWithAck("card:add", { id: randomUUID(), columnId: "went-well", text: `spam ${i}` }),
+      ),
+    );
+    const limited = results.filter((r) => !r.ok && r.error === "rate_limited").length;
+    expect(limited).toBeGreaterThan(50);
+    expect(results.filter((r) => r.ok).length).toBeGreaterThanOrEqual(35); // the burst, minus the join
+    expect(alice.connected).toBe(true);
+  });
+});

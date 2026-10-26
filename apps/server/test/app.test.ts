@@ -56,3 +56,24 @@ describe("socket handshake", () => {
     expect(pong.serverTime).toBeGreaterThanOrEqual(before);
   });
 });
+
+describe("rate limits", () => {
+  it("lets one address create at most 10 teams a minute", async () => {
+    const app = buildTestApp();
+    const codes: number[] = [];
+    for (let i = 0; i < 11; i++) {
+      codes.push((await app.inject({ method: "POST", url: "/retros", payload: { teamName: `Team ${i}` } })).statusCode);
+    }
+    expect(codes.slice(0, 10).every((c) => c === 201)).toBe(true);
+    expect(codes[10]).toBe(429);
+  });
+
+  it("rejects request bodies over 16 KB", async () => {
+    const res = await buildTestApp().inject({
+      method: "POST",
+      url: "/retros",
+      payload: { teamName: "x".repeat(20_000) },
+    });
+    expect(res.statusCode).toBe(413);
+  });
+});

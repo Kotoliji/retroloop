@@ -5,6 +5,11 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   REDIS_URL: z.string().url(),
   WEB_ORIGIN: z.string().url(),
+  /** Behind a reverse proxy, trust X-Forwarded-For so rate limits see real client IPs. */
+  TRUST_PROXY: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
 });
 
 export type Config = z.infer<typeof envSchema>;

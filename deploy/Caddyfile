@@ -1,0 +1,10 @@
+# The site and its API on two host names. Caddy obtains HTTPS certificates for
+# both automatically and proxies WebSocket upgrades without extra settings.
+{$WEB_ADDRESS} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}
+
+{$API_ADDRESS} {
+	reverse_proxy server:4000
+}

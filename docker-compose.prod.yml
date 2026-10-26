@@ -1,0 +1,78 @@
+# Production: everything on one server behind Caddy, which gets and renews
+# HTTPS certificates by itself. Settings come from .env.prod:
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+# See docs/DEPLOY.md.
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: retro
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: retro
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U retro -d retro"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  server:
+    build:
+      context: .
+      dockerfile: apps/server/Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgresql://retro:${POSTGRES_PASSWORD}@postgres:5432/retro
+      REDIS_URL: redis://redis:6379
+      WEB_ORIGIN: ${WEB_URL:?set WEB_URL}
+      TRUST_PROXY: "true"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_SERVER_URL: ${API_URL:?set API_URL}
+        NEXT_PUBLIC_CONTACT_EMAIL: ${CONTACT_EMAIL:-}
+    restart: unless-stopped
+    depends_on:
+      - server
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:${HTTPS_PORT:-443}"
+    environment:
+      WEB_ADDRESS: ${WEB_ADDRESS:?set WEB_ADDRESS}
+      API_ADDRESS: ${API_ADDRESS:?set API_ADDRESS}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - web
+      - server
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:
