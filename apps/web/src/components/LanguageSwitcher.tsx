@@ -8,6 +8,8 @@ import { routing, type Locale } from "@/i18n/routing";
 const NAMES: Record<Locale, string> = {
   en: "English",
   uk: "Українська",
+  ru: "Русский",
+  pt: "Português",
 };
 
 /** Switches the language and stays on the same page. */

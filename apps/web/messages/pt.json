@@ -1,0 +1,245 @@
+{
+  "Meta": {
+    "title": "Retroloop — retrospetivas em que as ações são mesmo cumpridas",
+    "description": "Faça a retrospetiva do sprint no browser e garanta que as ações acordadas são cumpridas. Gratuito, sem registo."
+  },
+  "Common": {
+    "language": "Idioma",
+    "back": "Voltar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "delete": "Apagar",
+    "remove": "Remover",
+    "due": "até {date}",
+    "privacy": "Privacidade"
+  },
+  "Landing": {
+    "eyebrow": "Retrospetivas de sprint gratuitas",
+    "headline": "Retros que mudam mesmo alguma coisa",
+    "lead": "Faça a retrospetiva no browser — e garanta que as ações são cumpridas. Ninguém precisa de conta: crie um quadro e partilhe o link.",
+    "problemTitle": "Os mesmos problemas, sprint após sprint",
+    "problem": "A maioria das equipas cumpre menos de metade das ações das suas retros. O quadro é a parte fácil; é o que acontece depois que faz as retros falhar. O Retroloop foi construído à volta dessa parte.",
+    "howTitle": "Como decorre uma retro",
+    "steps": {
+      "write": {
+        "title": "Escrever, de forma anónima",
+        "body": "Todos adicionam cartões. Os cartões dos outros ficam no servidor até o facilitador os revelar — não apenas desfocados no ecrã."
+      },
+      "group": {
+        "title": "Agrupar e votar",
+        "body": "Arraste cartões parecidos uns para os outros e depois gaste um número limitado de votos no que mais importa."
+      },
+      "discuss": {
+        "title": "Acordar até três ações",
+        "body": "Cada ação precisa de um responsável e de uma data. Poucas ações com dono são cumpridas; listas longas não."
+      },
+      "review": {
+        "title": "Verificar da próxima vez",
+        "body": "A retro seguinte começa pelas ações da anterior — feitas, ainda não ou abandonadas — e pela taxa de cumprimento da equipa."
+      }
+    },
+    "featuresTitle": "Feito para equipas reais",
+    "features": {
+      "noSignup": "Sem registo para ninguém, nem para o facilitador",
+      "realtime": "Tudo em direto: cartões, votos e temporizador sincronizados",
+      "exports": "Exportação para Jira (CSV), GitHub Issues, Markdown e calendário",
+      "mobile": "Funciona no telemóvel, para quem se junta de qualquer lado",
+      "privacy": "Sem cookies de rastreio nem anúncios; alojado na UE"
+    },
+    "ctaTitle": "Comece a primeira retro da sua equipa",
+    "ctaBody": "Demora dez segundos. Partilhe o link e a equipa está lá."
+  },
+  "CreateRetro": {
+    "teamName": "Nome da equipa",
+    "placeholder": "O nome da sua equipa",
+    "submit": "Começar uma retro",
+    "creating": "A criar…",
+    "error": "Não foi possível criar a retro. Tente novamente."
+  },
+  "Room": {
+    "loading": "A carregar a retro…",
+    "joining": "A entrar na retro…",
+    "offline": "Sem ligação ao servidor — a tentar de novo…",
+    "notFoundTitle": "Esta retro não existe",
+    "notFoundBody": "Verifique o link ou comece uma nova.",
+    "startNew": "Começar uma retro",
+    "reconnecting": "A religar…",
+    "copyLink": "Copiar link de convite",
+    "linkCopied": "Link copiado",
+    "online": "{count} online",
+    "you": "(você)",
+    "facilitator": "facilitador",
+    "makeFacilitator": "tornar facilitador",
+    "confirmHandover": "Tornar {name} o facilitador?",
+    "retroNumber": "Retro {number}"
+  },
+  "Join": {
+    "title": "Entrar na retro",
+    "nameLabel": "O seu nome, tal como a equipa o vai ver",
+    "submit": "Entrar"
+  },
+  "Stage": {
+    "progress": "Progresso da retro",
+    "done": "concluído",
+    "labels": {
+      "review": "Revisão",
+      "write": "Escrever",
+      "group": "Agrupar",
+      "vote": "Votar",
+      "discuss": "Discutir",
+      "done": "Fecho"
+    },
+    "hints": {
+      "review": "Primeiro, as ações da última vez: feitas, ainda não, ou abandonar?",
+      "write": "Escreva os seus cartões. Ninguém vê o que escreve até o facilitador revelar o quadro.",
+      "group": "Arraste um cartão para cima de um parecido para os agrupar.",
+      "vote": "Gaste os seus votos nos temas que mais quer discutir.",
+      "discuss": "Discutam os temas, começando pelos mais votados, e acordem até três ações.",
+      "done": "Isto é o que a equipa acordou. Exporte e comece a próxima retro quando for altura."
+    },
+    "next": {
+      "review": "Começar a escrever",
+      "write": "Revelar cartões",
+      "group": "Começar a votar",
+      "vote": "Mostrar resultados",
+      "discuss": "Fechar a retro"
+    },
+    "votesLeft": "Restam {left} de {total} votos",
+    "timer": "Temporizador",
+    "minutes": "{count} min",
+    "stopTimer": "Parar temporizador",
+    "votesEach": "Votos por pessoa",
+    "timeLeft": "Tempo restante",
+    "timesUp": "Acabou o tempo"
+  },
+  "Board": {
+    "columns": {
+      "went-well": "Correu bem",
+      "to-improve": "A melhorar",
+      "try-next": "Experimentar"
+    },
+    "addCard": "Adicionar um cartão a {column}",
+    "addPlaceholder": "Adicione um cartão — Enter para publicar",
+    "hiddenCard": "Um cartão escondido de um colega",
+    "editCard": "Editar cartão",
+    "yourCard": "O seu cartão",
+    "ungroup": "Desagrupar",
+    "groupedCards": "Cartões agrupados",
+    "draggable": "cartão que pode ser arrastado",
+    "yourVotes": "Os seus votos: {count}",
+    "voteFor": "Votar em {topic}",
+    "unvote": "Retirar um voto de {topic}",
+    "thisTopic": "este tema"
+  },
+  "Discuss": {
+    "topics": "Temas",
+    "now": "Em discussão agora",
+    "votes": "{count, plural, one {# voto} other {# votos}}",
+    "makeAction": "+ Ação",
+    "focus": "Discutir",
+    "unfocus": "Feito",
+    "empty": "Não foram escritos cartões nesta retro."
+  },
+  "Actions": {
+    "title": "Ações",
+    "count": "{count} de {max}",
+    "rule": "Cada uma precisa de um responsável e de uma data. No máximo três: poucas ações com dono são cumpridas, listas longas não.",
+    "full": "É o limite para esta retro.",
+    "add": "Adicionar ação",
+    "fromTopic": "Do tema:",
+    "unlink": "Desligar o tema",
+    "whatLabel": "O que vai ser feito",
+    "whatPlaceholder": "O que exatamente vai ser feito?",
+    "owner": "Responsável",
+    "ownerPlaceholder": "Quem o faz",
+    "dueLabel": "Data"
+  },
+  "Score": {
+    "title": "Cumprimento",
+    "summary": "{done} de {total} ações das retros anteriores cumpridas",
+    "first": "Esta é a primeira retro da equipa — a taxa de cumprimento começa na próxima.",
+    "none": "Ainda não foram acordadas ações nas retros anteriores."
+  },
+  "Review": {
+    "outcome": "Resultado de {text}",
+    "done": "Feita",
+    "notYet": "Ainda não",
+    "drop": "Abandonar",
+    "overdue": "em atraso",
+    "newDate": "Nova data"
+  },
+  "Summary": {
+    "agreedTitle": "O que a equipa {team} acordou fazer",
+    "noneAgreed": "Não foram acordadas ações nesta retro.",
+    "export": "Exportar",
+    "copyMarkdown": "Copiar como Markdown",
+    "copied": "Copiado",
+    "jiraCsv": "Descarregar CSV para o Jira",
+    "githubRepo": "Repositório GitHub para issues",
+    "calendar": "Adicionar ao calendário",
+    "calendarLabel": "Adicionar \"{text}\" ao calendário",
+    "githubIssue": "Abrir issue no GitHub",
+    "githubIssueLabel": "Abrir uma issue no GitHub para \"{text}\"",
+    "startNext": "Começar a próxima retro",
+    "goToNext": "Ir para a próxima retro",
+    "joinNext": "Entrar na próxima retro",
+    "waitNext": "O facilitador começa a próxima retro quando for altura; vai abrir com estas ações."
+  },
+  "Export": {
+    "actionItems": "Ações",
+    "noneAgreed": "Nenhuma acordada.",
+    "topics": "Temas",
+    "noCards": "Sem cartões.",
+    "earlier": "Ações de retros anteriores",
+    "due": "até {date}",
+    "votes": "{count, plural, one {# voto} other {# votos}}",
+    "owner": "Responsável: {name}",
+    "agreedIn": "Acordado em {retro}.",
+    "calendarTitle": "Prazo: {text}",
+    "retroTitle": "Retro {number}"
+  },
+  "Survey": {
+    "title": "Quão útil foi esta retro?",
+    "ratings": {
+      "1": "Nada útil",
+      "2": "Pouco",
+      "3": "Razoável",
+      "4": "Útil",
+      "5": "Muito útil"
+    },
+    "commentLabel": "Algo que devamos melhorar no Retroloop? (opcional)",
+    "quotable": "Pode citar isto no site, sem o meu nome",
+    "submit": "Enviar",
+    "update": "Atualizar a resposta",
+    "thanks": "Obrigado — isto ajuda-nos a melhorar o Retroloop."
+  },
+  "Danger": {
+    "title": "Apagar esta retro",
+    "body": "Remove os cartões, votos, nomes, ações e respostas desta retro para todos. Não é possível desfazer.",
+    "button": "Apagar retro",
+    "confirm": "Apagar esta retro para todos? Não é possível desfazer.",
+    "deletedTitle": "Esta retro foi apagada",
+    "deletedBody": "O facilitador apagou-a, juntamente com tudo o que nela existia."
+  },
+  "Privacy": {
+    "title": "Privacidade",
+    "updated": "Última atualização: {date}",
+    "intro": "O Retroloop foi feito para precisar do mínimo de dados possível. Sem contas, sem cookies de rastreio e sem anúncios.",
+    "storeTitle": "O que é guardado",
+    "store": "O nome da equipa, os nomes que as pessoas escrevem ao entrar, cartões, votos, ações com responsáveis e datas, e as respostas ao inquérito no fim da retro. Não pedimos mais nada: nem email, nem palavra-passe.",
+    "browserTitle": "No seu browser",
+    "browser": "O browser guarda o seu nome e uma chave secreta por retro (para que, ao recarregar, volte a ser você) no local storage. Não são cookies e nunca são usados para rastreio.",
+    "analyticsTitle": "Contagens de uso anónimas",
+    "analytics": "Para perceber se o Retroloop ajuda, contamos eventos como \"foi criada uma retro\" ou \"foi adicionado um cartão\". Estas contagens nunca incluem nomes, texto de cartões, endereços IP ou dados do browser.",
+    "retentionTitle": "Durante quanto tempo",
+    "retention": "Os dados de uma equipa são apagados automaticamente quando não começa uma retro há 12 meses. O facilitador pode apagar uma retro, e tudo o que nela existe, a qualquer momento no ecrã de fecho.",
+    "contactTitle": "Contacto",
+    "contact": "Perguntas ou pedidos sobre os seus dados: {email}",
+    "contactFallback": "Perguntas ou pedidos sobre os seus dados: contacte o responsável por este site."
+  },
+  "Footer": {
+    "privacy": "Privacidade",
+    "tagline": "Retrospetivas de sprint gratuitas."
+  }
+}

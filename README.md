@@ -19,7 +19,7 @@ completed in most teams, and existing tools stop at the board. See
 - [x] **Phase 1** — live board: create a retro, share the link, cards appear for everyone instantly
 - [x] **Phase 2** — retro flow: facilitator, anonymous writing → reveal and group → vote → discuss, timer
 - [x] **Phase 3** — action items with owner and due date, review in the next retro, follow-through score, export
-- [x] **Phase 4** — launch-ready: landing page, English + Ukrainian, end-of-retro survey, anonymous analytics, privacy page and retention, rate limits, production Docker + Caddy
+- [x] **Phase 4** — launch-ready: landing page in English, Ukrainian, Russian and Portuguese, end-of-retro survey, anonymous analytics, privacy page and retention, rate limits, production Docker + Caddy
 - [ ] Phase 5+ — templates, reminders, scaling across instances, e2e tests, admin stats
 
 ## Stack
@@ -30,7 +30,7 @@ completed in most teams, and existing tools stop at the board. See
 | Realtime server | Node.js 24, Fastify 5, Socket.IO 4 |
 | Data | PostgreSQL 18 + Prisma 7, Redis 8 |
 | Shared contract | `@retro/shared` — socket events and payload schemas (zod), used by both sides |
-| i18n | next-intl, locale-prefixed routes (`/en`, `/uk`), message keys type-checked |
+| i18n | next-intl: English, Ukrainian, Russian, Portuguese on locale-prefixed routes; message keys type-checked |
 | Production | Docker images for both apps, Caddy with automatic HTTPS, see [docs/DEPLOY.md](docs/DEPLOY.md) |
 | Tooling | npm workspaces, Vitest, ESLint, tsup, Docker Compose, GitHub Actions |
 
