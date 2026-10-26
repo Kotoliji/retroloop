@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: retro
+          POSTGRES_PASSWORD: retro
+          POSTGRES_DB: retro
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U retro -d retro"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://retro:retro@127.0.0.1:5432/retro
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Migrations apply to a clean database
+        run: npx prisma migrate deploy
+        working-directory: apps/server
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
