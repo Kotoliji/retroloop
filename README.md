@@ -17,7 +17,7 @@ completed in most teams, and existing tools stop at the board. See
 
 - [x] **Phase 0** — monorepo, realtime server with health checks, typed socket protocol, CI
 - [x] **Phase 1** — live board: create a retro, share the link, cards appear for everyone instantly
-- [ ] Phase 2 — retro flow: facilitator, anonymous writing → reveal → vote → discuss, timer
+- [x] **Phase 2** — retro flow: facilitator, anonymous writing → reveal and group → vote → discuss, timer
 - [ ] Phase 3 — action items with owner and due date, carry-over, export
 - [ ] Phase 4 — public launch: landing page, i18n, analytics, end-of-retro survey
 - [ ] Phase 5+ — templates, reminders, scaling across instances, e2e tests, admin stats
@@ -75,6 +75,21 @@ within a second if one of them is down.
   state with the server's snapshot, so nothing missed while offline is lost.
 - **Presence per socket.** A participant with two tabs open stays online until the
   last one closes.
+
+## How a retro runs
+
+| Stage | What happens | Enforced on the server |
+|---|---|---|
+| Write | Everyone adds cards | Other people's text is not sent to the browser at all — only a placeholder — so it can't be read in DevTools |
+| Group | Cards are revealed; drag a card onto a similar one to group them | Groups are one level deep; deleting a group's top card promotes the next one |
+| Vote | Everyone spends a limited number of votes on groups | The limit is checked in a transaction that locks the voter's row: 10 parallel votes with a limit of 3 store exactly 3. Totals stay hidden |
+| Discuss | Groups ranked by votes; the facilitator highlights the current topic | Vote totals are revealed only now |
+
+Whoever creates a retro gets a facilitator key (kept in their browser, stored as a
+hash); only the facilitator moves between stages, runs the timer and can hand the
+role over. Card authors are never sent to other participants in any stage — the
+client only learns "mine" or "not mine". The timer runs on the server clock; each
+browser corrects for its own clock offset, measured on join.
 
 ## Checks
 

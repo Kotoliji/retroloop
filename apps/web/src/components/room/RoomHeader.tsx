@@ -1,13 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRetroStore } from "@/lib/retro-store";
+import { useIsFacilitator, useRetroStore } from "@/lib/retro-store";
+import type { RoomActions } from "@/lib/use-retro-room";
 
-export function RoomHeader() {
+export function RoomHeader({ actions }: { actions: RoomActions }) {
   const retro = useRetroStore((s) => s.retro);
   const status = useRetroStore((s) => s.status);
   const participants = useRetroStore((s) => s.participants);
   const me = useRetroStore((s) => s.me);
+  const facilitatorId = useRetroStore((s) => s.retro?.facilitatorId);
+  const isFacilitator = useIsFacilitator();
   const [copied, setCopied] = useState(false);
 
   async function copyLink() {
@@ -37,8 +40,23 @@ export function RoomHeader() {
                 : "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"
             }`}
           >
+            {p.id === facilitatorId && (
+              <span title="Facilitator" aria-label="facilitator" className="mr-1">
+                ★
+              </span>
+            )}
             {p.name}
             {p.id === me?.id && <span className="sr-only"> (you)</span>}
+            {isFacilitator && p.id !== me?.id && (
+              <button
+                onClick={() => {
+                  if (window.confirm(`Make ${p.name} the facilitator?`)) void actions.facilitator.handover(p.id);
+                }}
+                className="ml-1.5 underline-offset-2 hover:underline"
+              >
+                make facilitator
+              </button>
+            )}
           </li>
         ))}
       </ul>

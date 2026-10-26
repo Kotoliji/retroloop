@@ -1,9 +1,10 @@
 "use client";
 
-import { LIMITS, type RetroSummary } from "@retro/shared";
+import { LIMITS, type CreatedRetro } from "@retro/shared";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { SERVER_URL } from "@/lib/socket";
+import { saveHostKey } from "@/lib/storage";
 
 export function CreateRetroForm() {
   const router = useRouter();
@@ -22,7 +23,8 @@ export function CreateRetroForm() {
         body: JSON.stringify({ title }),
       });
       if (!res.ok) throw new Error(String(res.status));
-      const retro: RetroSummary = await res.json();
+      const retro: CreatedRetro = await res.json();
+      saveHostKey(retro.id, retro.hostKey);
       router.push(`/r/${retro.id}`);
     } catch {
       setError("Could not create the retro. Is the server running?");

@@ -9,6 +9,7 @@ import { useRetroRoom } from "@/lib/use-retro-room";
 import { Board } from "./Board";
 import { NameForm } from "./NameForm";
 import { RoomHeader } from "./RoomHeader";
+import { StageBar } from "./StageBar";
 
 const noSubscribe = () => () => {};
 
@@ -50,7 +51,8 @@ function JoinedRoom({ retroId, name }: { retroId: string; name: string }) {
 
   return (
     <div className="flex flex-1 flex-col">
-      <RoomHeader />
+      <RoomHeader actions={actions} />
+      <StageBar actions={actions} />
       <Board actions={actions} />
     </div>
   );

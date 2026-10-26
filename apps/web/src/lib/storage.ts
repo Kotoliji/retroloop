@@ -22,3 +22,7 @@ export const saveName = (name: string) => write("retroloop:name", name);
 
 export const savedToken = (retroId: string) => read(`retroloop:token:${retroId}`) ?? undefined;
 export const saveToken = (retroId: string, token: string) => write(`retroloop:token:${retroId}`, token);
+
+/** The facilitator key of a retro this browser created. */
+export const savedHostKey = (retroId: string) => read(`retroloop:host:${retroId}`) ?? undefined;
+export const saveHostKey = (retroId: string, key: string) => write(`retroloop:host:${retroId}`, key);

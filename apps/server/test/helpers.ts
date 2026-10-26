@@ -54,8 +54,35 @@ export function ok<T>(result: Result<T>): T {
   return result.data;
 }
 
-export async function join(socket: Client, retroId: string, name: string, token?: string): Promise<JoinResult> {
-  return ok(await socket.emitWithAck("retro:join", { retroId, name, token }));
+export async function join(
+  socket: Client,
+  retroId: string,
+  name: string,
+  { token, hostKey }: { token?: string; hostKey?: string } = {},
+): Promise<JoinResult> {
+  return ok(await socket.emitWithAck("retro:join", { retroId, name, token, hostKey }));
+}
+
+/** Resolves with the first payload of an event that matches, or rejects after a timeout. */
+export function until<E extends keyof ServerToClientEvents>(
+  socket: Client,
+  event: E,
+  matches: (payload: Parameters<ServerToClientEvents[E]>[0]) => boolean,
+  timeoutMs = 2000,
+) {
+  return new Promise<Parameters<ServerToClientEvents[E]>[0]>((resolve, reject) => {
+    const listener = ((payload: Parameters<ServerToClientEvents[E]>[0]) => {
+      if (!matches(payload)) return;
+      clearTimeout(timer);
+      socket.off(event, listener as never);
+      resolve(payload);
+    }) as never;
+    const timer = setTimeout(() => {
+      socket.off(event, listener);
+      reject(new Error(`no matching "${event}" within ${timeoutMs} ms`));
+    }, timeoutMs);
+    socket.on(event, listener);
+  });
 }
 
 /** Resolves with the next payload of an event, or rejects after a timeout. */

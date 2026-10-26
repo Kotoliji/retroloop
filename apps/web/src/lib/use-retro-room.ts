@@ -1,10 +1,10 @@
 "use client";
 
-import type { CardView, ColumnId, Result } from "@retro/shared";
+import { estimateClockOffset, type CardView, type ColumnId, type Result, type Stage } from "@retro/shared";
 import { useCallback, useEffect, useRef } from "react";
 import { useRetroStore } from "./retro-store";
 import { createSocket, type RetroSocket } from "./socket";
-import { savedToken, saveToken } from "./storage";
+import { savedHostKey, savedToken, saveToken } from "./storage";
 
 const ACK_TIMEOUT_MS = 5000;
 
@@ -22,15 +22,29 @@ export function useRetroRoom(retroId: string, name: string) {
     const socket = createSocket();
     socketRef.current = socket;
 
+    async function measureClock() {
+      const sentAt = Date.now();
+      try {
+        const { serverTime } = await socket.timeout(ACK_TIMEOUT_MS).emitWithAck("client:ping");
+        store.setClockOffset(estimateClockOffset(sentAt, Date.now(), serverTime).offset);
+      } catch {
+        // keep the previous estimate
+      }
+    }
+
     async function join() {
       store.setStatus("connecting");
       try {
-        const result = await socket
-          .timeout(ACK_TIMEOUT_MS)
-          .emitWithAck("retro:join", { retroId, name, token: savedToken(retroId) });
+        const result = await socket.timeout(ACK_TIMEOUT_MS).emitWithAck("retro:join", {
+          retroId,
+          name,
+          token: savedToken(retroId),
+          hostKey: savedHostKey(retroId),
+        });
         if (!result.ok) return store.setStatus(result.error === "not_found" ? "not_found" : "error");
         saveToken(retroId, result.data.token);
         store.joined(result.data);
+        void measureClock();
       } catch {
         // timed out; the next reconnect tries again
       }
@@ -41,6 +55,8 @@ export function useRetroRoom(retroId: string, name: string) {
     socket.on("connect_error", () => store.setStatus("offline"));
     socket.on("card:upserted", store.upsert);
     socket.on("card:deleted", ({ id }) => store.remove(id));
+    socket.on("retro:cards", store.setCards);
+    socket.on("retro:meta", store.setMeta);
     socket.on("participants:changed", store.setParticipants);
 
     return () => {
@@ -67,25 +83,34 @@ export function useRetroRoom(retroId: string, name: string) {
     [],
   );
 
+  /** Sends a request whose effect arrives as a broadcast, with nothing to apply locally. */
+  const send = useCallback(
+    (fn: (socket: RetroSocket) => Promise<Result<unknown>>) =>
+      mutate(
+        () => {},
+        () => {},
+        fn,
+      ),
+    [mutate],
+  );
+
   const addCard = useCallback(
     (columnId: ColumnId, text: string) => {
-      const { me, upsert, remove } = useRetroStore.getState();
-      if (!me) return Promise.resolve(false);
+      const { upsert, remove } = useRetroStore.getState();
       const card: CardView = {
         id: crypto.randomUUID(),
         columnId,
         text,
-        authorId: me.id,
+        mine: true,
+        groupId: null,
         createdAt: new Date().toISOString(),
+        myVotes: 0,
+        votes: null,
       };
       return mutate(
         () => upsert(card),
         () => remove(card.id),
-        async (socket) => {
-          const result = await socket.timeout(ACK_TIMEOUT_MS).emitWithAck("card:add", { id: card.id, columnId, text });
-          if (result.ok) upsert(result.data);
-          return result;
-        },
+        (socket) => socket.timeout(ACK_TIMEOUT_MS).emitWithAck("card:add", { id: card.id, columnId, text }),
       );
     },
     [mutate],
@@ -115,7 +140,62 @@ export function useRetroRoom(retroId: string, name: string) {
     [mutate],
   );
 
-  return { addCard, editCard, deleteCard };
+  const groupCard = useCallback(
+    (id: string, targetId: string) =>
+      send((socket) => socket.timeout(ACK_TIMEOUT_MS).emitWithAck("card:group", { id, targetId })),
+    [send],
+  );
+
+  const ungroupCard = useCallback(
+    (id: string) => send((socket) => socket.timeout(ACK_TIMEOUT_MS).emitWithAck("card:ungroup", { id })),
+    [send],
+  );
+
+  const vote = useCallback(
+    (card: CardView, change: 1 | -1) => {
+      const { setMyVotes } = useRetroStore.getState();
+      return mutate(
+        () => setMyVotes(card.id, card.myVotes + change),
+        () => setMyVotes(card.id, card.myVotes),
+        async (socket) => {
+          const event = change === 1 ? "vote:add" : "vote:remove";
+          const result = await socket.timeout(ACK_TIMEOUT_MS).emitWithAck(event, { id: card.id });
+          if (result.ok) setMyVotes(card.id, result.data.myVotes);
+          return result;
+        },
+      );
+    },
+    [mutate],
+  );
+
+  // Facilitator commands: the server broadcasts the new meta to everyone.
+  const facilitator = {
+    setStage: useCallback(
+      (stage: Stage) => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("retro:stage", { stage })),
+      [send],
+    ),
+    setVotesPerPerson: useCallback(
+      (votesPerPerson: number) =>
+        send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("retro:votes", { votesPerPerson })),
+      [send],
+    ),
+    focus: useCallback(
+      (cardId: string | null) => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("retro:focus", { cardId })),
+      [send],
+    ),
+    handover: useCallback(
+      (participantId: string) =>
+        send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("retro:handover", { participantId })),
+      [send],
+    ),
+    startTimer: useCallback(
+      (seconds: number) => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("timer:start", { seconds })),
+      [send],
+    ),
+    stopTimer: useCallback(() => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("timer:stop", {})), [send]),
+  };
+
+  return { addCard, editCard, deleteCard, groupCard, ungroupCard, vote, facilitator };
 }
 
 export type RoomActions = ReturnType<typeof useRetroRoom>;

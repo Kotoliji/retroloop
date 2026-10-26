@@ -9,11 +9,20 @@ datasource db {
 
 model Retro {
   /// Short random id that goes into the share link.
-  id           String        @id
-  title        String
-  createdAt    DateTime      @default(now())
-  participants Participant[]
-  cards        Card[]
+  id             String        @id
+  title          String
+  createdAt      DateTime      @default(now())
+  /// write | group | vote | discuss
+  stage          String        @default("write")
+  /// Hash of the key given to whoever created the retro.
+  hostKeyHash    String?
+  facilitatorId  String?
+  votesPerPerson Int           @default(3)
+  timerEndsAt    DateTime?
+  focusCardId    String?
+  participants   Participant[]
+  cards          Card[]
+  votes          Vote[]
 }
 
 /// Someone who joined a retro by link. There are no accounts: the browser keeps
@@ -26,6 +35,7 @@ model Participant {
   tokenHash String   @unique
   createdAt DateTime @default(now())
   cards     Card[]
+  votes     Vote[]
 
   @@index([retroId])
 }
@@ -40,8 +50,26 @@ model Card {
   text      String
   authorId  String
   author    Participant @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  /// The top-level card this one is grouped under. Groups are one level deep.
+  groupId   String?     @db.Uuid
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
+  votes     Vote[]
 
   @@index([retroId])
+}
+
+/// One vote; a participant may put several of their votes on the same card.
+model Vote {
+  id            String      @id @default(uuid())
+  retroId       String
+  retro         Retro       @relation(fields: [retroId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  cardId        String      @db.Uuid
+  card          Card        @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@index([retroId])
+  @@index([participantId])
 }
