@@ -117,7 +117,21 @@
     "columns": {
       "went-well": "Correu bem",
       "to-improve": "A melhorar",
-      "try-next": "Experimentar"
+      "try-next": "Experimentar",
+      "start": "Começar",
+      "stop": "Parar",
+      "continue": "Continuar",
+      "mad": "Irritou",
+      "sad": "Entristeceu",
+      "glad": "Alegrou",
+      "liked": "Gostámos",
+      "learned": "Aprendemos",
+      "lacked": "Faltou",
+      "longed-for": "Desejámos",
+      "wind": "Vento — o que nos impulsiona",
+      "anchors": "Âncoras — o que nos prende",
+      "rocks": "Rochas — riscos à frente",
+      "island": "Ilha — onde queremos chegar"
     },
     "addCard": "Adicionar um cartão a {column}",
     "addPlaceholder": "Adicione um cartão — Enter para publicar",
@@ -241,5 +255,13 @@
   "Footer": {
     "privacy": "Privacidade",
     "tagline": "Retrospetivas de sprint gratuitas."
+  },
+  "Templates": {
+    "label": "Formato",
+    "classic": "Correu bem / A melhorar / Experimentar",
+    "start-stop-continue": "Começar, Parar, Continuar",
+    "mad-sad-glad": "Irritou, Entristeceu, Alegrou",
+    "four-ls": "4 Ls",
+    "sailboat": "Veleiro"
   }
 }

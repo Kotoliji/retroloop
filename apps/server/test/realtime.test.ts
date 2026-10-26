@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { ColumnId } from "@retro/shared";
+import type { ColumnId, Stage } from "@retro/shared";
 import { describe, expect, it } from "vitest";
 import { client, join, next, ok, prisma, startServer, store, until, type Client } from "./helpers";
 
@@ -16,7 +16,7 @@ async function setup() {
 const addCard = async (socket: Client, text: string, columnId: ColumnId = "went-well") =>
   ok(await socket.emitWithAck("card:add", { id: randomUUID(), columnId, text }));
 
-const setStage = async (socket: Client, stage: "write" | "group" | "vote" | "discuss") =>
+const setStage = async (socket: Client, stage: Stage) =>
   ok(await socket.emitWithAck("retro:stage", { stage }));
 
 describe("joining a retro", () => {
@@ -296,5 +296,38 @@ describe("flooding", () => {
     expect(limited).toBeGreaterThan(50);
     expect(results.filter((r) => r.ok).length).toBeGreaterThanOrEqual(35); // the burst, minus the join
     expect(alice.connected).toBe(true);
+  });
+});
+
+describe("retro formats", () => {
+  it("can be switched by the facilitator until the first card is written", async () => {
+    const { alice, bob } = await setup();
+    const switched = until(bob, "retro:meta", (meta) => meta.template === "mad-sad-glad");
+    ok(await alice.emitWithAck("retro:template", { template: "mad-sad-glad" }));
+    await switched;
+
+    // Cards must use the current format's columns.
+    expect(await bob.emitWithAck("card:add", { id: randomUUID(), columnId: "went-well", text: "x" })).toEqual({
+      ok: false,
+      error: "invalid",
+    });
+    ok(await bob.emitWithAck("card:add", { id: randomUUID(), columnId: "glad", text: "Pairing" }));
+
+    expect(await alice.emitWithAck("retro:template", { template: "classic" })).toEqual({
+      ok: false,
+      error: "wrong_stage",
+    });
+    expect(await bob.emitWithAck("retro:template", { template: "classic" })).toEqual({
+      ok: false,
+      error: "forbidden",
+    });
+  });
+
+  it("carries over to the team's next retro", async () => {
+    const { alice } = await setup();
+    ok(await alice.emitWithAck("retro:template", { template: "sailboat" }));
+    await setStage(alice, "done");
+    const next = ok(await alice.emitWithAck("retro:next", {}));
+    expect((await store.getRetro(next.id))?.template).toBe("sailboat");
   });
 });

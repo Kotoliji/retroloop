@@ -10,6 +10,7 @@ import {
   type ReviewActionRequest,
   type Stage,
   type SurveyRequest,
+  type TemplateId,
   type CLIENT_EVENTS,
 } from "@retro/shared";
 import { useCallback, useEffect, useRef } from "react";
@@ -195,6 +196,10 @@ export function useRetroRoom(retroId: string, name: string) {
   const facilitator = {
     setStage: useCallback(
       (stage: Stage) => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("retro:stage", { stage })),
+      [send],
+    ),
+    setTemplate: useCallback(
+      (template: TemplateId) => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("retro:template", { template })),
       [send],
     ),
     setVotesPerPerson: useCallback(

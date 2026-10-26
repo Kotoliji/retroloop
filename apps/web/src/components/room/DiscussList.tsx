@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { rankGroups } from "@/lib/board-state";
 import { useIsFacilitator, useRetroStore } from "@/lib/retro-store";
 import type { RoomActions } from "@/lib/use-retro-room";
-import { ACCENTS } from "./Column";
+import { accentFor } from "./Column";
 
 /** Topics ranked by votes; the facilitator picks the one being discussed. */
 interface Props {
@@ -22,6 +22,7 @@ export function DiscussList({ actions, onMakeAction }: Props) {
   const cards = useRetroStore((s) => s.cards);
   const groups = useMemo(() => rankGroups(cards), [cards]);
   const focusId = useRetroStore((s) => s.retro?.focusCardId ?? null);
+  const template = useRetroStore((s) => s.retro?.template ?? "classic");
   const isFacilitator = useIsFacilitator();
   const focusedRef = useRef<HTMLLIElement>(null);
 
@@ -39,7 +40,7 @@ export function DiscussList({ actions, onMakeAction }: Props) {
               key={lead.id}
               ref={focused ? focusedRef : undefined}
               aria-current={focused ? "true" : undefined}
-              className={`rounded-xl border border-t-4 bg-white p-4 shadow-sm transition dark:bg-zinc-900 ${ACCENTS[lead.columnId]} ${
+              className={`rounded-xl border border-t-4 bg-white p-4 shadow-sm transition dark:bg-zinc-900 ${accentFor(template, lead.columnId)} ${
                 focused ? "border-sky-500 ring-2 ring-sky-500" : "border-zinc-200 dark:border-zinc-800"
               }`}
             >

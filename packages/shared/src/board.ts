@@ -1,14 +1,25 @@
 import { z } from "zod";
 
-/** The classic three-column retro. More templates come later. */
-export const COLUMNS = [
-  { id: "went-well", title: "Went well" },
-  { id: "to-improve", title: "To improve" },
-  { id: "try-next", title: "Try next" },
-] as const;
+/** Retro formats and their columns, in display order. Column titles live in the UI translations. */
+export const TEMPLATES = {
+  classic: ["went-well", "to-improve", "try-next"],
+  "start-stop-continue": ["start", "stop", "continue"],
+  "mad-sad-glad": ["mad", "sad", "glad"],
+  "four-ls": ["liked", "learned", "lacked", "longed-for"],
+  sailboat: ["wind", "anchors", "rocks", "island"],
+} as const;
 
-export type ColumnId = (typeof COLUMNS)[number]["id"];
-export const columnIdSchema = z.enum(COLUMNS.map((c) => c.id) as [ColumnId, ...ColumnId[]]);
+export type TemplateId = keyof typeof TEMPLATES;
+export const TEMPLATE_IDS = Object.keys(TEMPLATES) as TemplateId[];
+export const templateIdSchema = z.enum(TEMPLATE_IDS as [TemplateId, ...TemplateId[]]);
+
+export type ColumnId = (typeof TEMPLATES)[TemplateId][number];
+const ALL_COLUMNS = [...new Set(Object.values(TEMPLATES).flat())] as ColumnId[];
+export const columnIdSchema = z.enum(ALL_COLUMNS as [ColumnId, ...ColumnId[]]);
+
+export function columnsOf(template: TemplateId): readonly ColumnId[] {
+  return TEMPLATES[template];
+}
 
 /**
  * A retro moves through these stages in order; the facilitator can step back.
@@ -56,6 +67,7 @@ export interface CreatedRetro extends RetroSummary {
 }
 
 export interface RetroMeta extends RetroSummary {
+  template: TemplateId;
   teamId: string;
   teamName: string;
   /** 1 for a team's first retro, 2 for the next one, and so on. */

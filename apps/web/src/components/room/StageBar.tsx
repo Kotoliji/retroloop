@@ -1,6 +1,6 @@
 "use client";
 
-import { LIMITS, STAGES } from "@retro/shared";
+import { LIMITS, STAGES, TEMPLATE_IDS, type TemplateId } from "@retro/shared";
 import { useTranslations } from "next-intl";
 import { votesUsed } from "@/lib/board-state";
 import { useIsFacilitator, useRetroStore } from "@/lib/retro-store";
@@ -15,6 +15,8 @@ const button =
 export function StageBar({ actions }: { actions: RoomActions }) {
   const t = useTranslations("Stage");
   const tc = useTranslations("Common");
+  const tt = useTranslations("Templates");
+  const hasCards = useRetroStore((s) => s.cards.length > 0);
   const retro = useRetroStore((s) => s.retro);
   const used = useRetroStore((s) => votesUsed(s.cards));
   const isFacilitator = useIsFacilitator();
@@ -93,6 +95,23 @@ export function StageBar({ actions }: { actions: RoomActions }) {
               <button className={button} onClick={() => void facilitator.stopTimer()}>
                 {t("stopTimer")}
               </button>
+            )}
+
+            {retro.stage === "write" && !hasCards && (
+              <label className="flex items-center gap-2">
+                {tt("label")}
+                <select
+                  value={retro.template}
+                  onChange={(e) => void facilitator.setTemplate(e.target.value as TemplateId)}
+                  className="rounded-lg border border-zinc-300 bg-white px-2 py-1 dark:border-zinc-700 dark:bg-zinc-900"
+                >
+                  {TEMPLATE_IDS.map((id) => (
+                    <option key={id} value={id}>
+                      {tt(id)}
+                    </option>
+                  ))}
+                </select>
+              </label>
             )}
 
             {(retro.stage === "review" || retro.stage === "write" || retro.stage === "group") && (

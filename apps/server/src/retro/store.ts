@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import {
+  columnsOf,
   LIMITS,
   type AddActionRequest,
   type AddCardRequest,
@@ -11,6 +12,7 @@ import {
   type Stage,
   type SurveyAnswer,
   type TeamStats,
+  type TemplateId,
 } from "@retro/shared";
 import type { Prisma } from "../db";
 import type { ActionRow, CardRow, RetroRow, VoteRow } from "./views";
@@ -22,8 +24,15 @@ const hash = (secret: string) => createHash("sha256").update(secret).digest("hex
 const isUniqueViolation = (err: unknown) =>
   typeof err === "object" && err !== null && "code" in err && err.code === "P2002";
 
-export type StoreFailure = "not_found" | "forbidden" | "wrong_stage" | "no_votes_left" | "too_many_actions";
+export type StoreFailure =
+  | "invalid"
+  | "not_found"
+  | "forbidden"
+  | "wrong_stage"
+  | "no_votes_left"
+  | "too_many_actions";
 export const STORE_FAILURES: ReadonlySet<string> = new Set<StoreFailure>([
+  "invalid",
   "not_found",
   "forbidden",
   "wrong_stage",
@@ -36,6 +45,7 @@ const retroSelect = {
   id: true,
   teamId: true,
   number: true,
+  template: true,
   title: true,
   stage: true,
   hasReview: true,
@@ -129,6 +139,7 @@ export function createRetroStore(prisma: Prisma) {
             hasReview: open > 0,
             stage: open > 0 ? "review" : "write",
             votesPerPerson: current.votesPerPerson,
+            template: current.template,
           },
           select: { id: true, title: true },
         });
@@ -194,7 +205,9 @@ export function createRetroStore(prisma: Prisma) {
      * after a dropped connection) gets the stored card back, not a duplicate.
      */
     async addCard(retroId: string, authorId: string, req: AddCardRequest): Promise<CardRow | StoreFailure> {
-      if ((await stageOf(retroId)) !== "write") return "wrong_stage";
+      const retro = await getRetro(retroId);
+      if (retro?.stage !== "write") return "wrong_stage";
+      if (!columnsOf(retro.template as TemplateId).includes(req.columnId)) return "invalid";
       try {
         return await prisma.card.create({ data: { ...req, retroId, authorId }, select: cardSelect });
       } catch (err) {
@@ -425,6 +438,15 @@ export function createRetroStore(prisma: Prisma) {
 
     async setStage(retroId: string, stage: Stage) {
       await prisma.retro.update({ where: { id: retroId }, data: { stage, timerEndsAt: null, focusCardId: null } });
+    },
+
+    /** The format can change only while writing and before the first card. */
+    async setTemplate(retroId: string, template: TemplateId): Promise<true | StoreFailure> {
+      const retro = await getRetro(retroId);
+      if (!retro) return "not_found";
+      if (retro.stage !== "write" || (await prisma.card.count({ where: { retroId } })) > 0) return "wrong_stage";
+      await prisma.retro.update({ where: { id: retroId }, data: { template } });
+      return true;
     },
 
     async setVotesPerPerson(retroId: string, votesPerPerson: number) {

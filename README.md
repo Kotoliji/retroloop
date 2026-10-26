@@ -20,7 +20,9 @@ completed in most teams, and existing tools stop at the board. See
 - [x] **Phase 2** — retro flow: facilitator, anonymous writing → reveal and group → vote → discuss, timer
 - [x] **Phase 3** — action items with owner and due date, review in the next retro, follow-through score, export
 - [x] **Phase 4** — launch-ready: landing page in English, Ukrainian, Russian and Portuguese, end-of-retro survey, anonymous analytics, privacy page and retention, rate limits, production Docker + Caddy
-- [ ] Phase 5+ — templates, reminders, scaling across instances, e2e tests, admin stats
+- [ ] Phase 5 — retro formats (done: classic, Start-Stop-Continue, Mad-Sad-Glad, 4 Ls, Sailboat), owner reminders
+- [ ] Phase 6 — scaling across instances with Redis, end-to-end tests, load test
+- [ ] Phase 7 — admin stats from the survey and analytics
 
 ## Stack
 

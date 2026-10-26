@@ -8,7 +8,7 @@ import {
   useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { COLUMNS, type CardView } from "@retro/shared";
+import { columnsOf, type CardView } from "@retro/shared";
 import { useState } from "react";
 import { useRetroStore } from "@/lib/retro-store";
 import type { RoomActions } from "@/lib/use-retro-room";
@@ -20,6 +20,7 @@ import { Summary } from "./Summary";
 
 export function Board({ actions }: { actions: RoomActions }) {
   const stage = useRetroStore((s) => s.retro?.stage);
+  const template = useRetroStore((s) => s.retro?.template ?? "classic");
   // The discussed topic an action item is being written for.
   const [source, setSource] = useState<CardView | null>(null);
   const sensors = useSensors(
@@ -39,10 +40,15 @@ export function Board({ actions }: { actions: RoomActions }) {
     );
   }
 
+  const columnIds = columnsOf(template);
   const columns = (
-    <main className="grid flex-1 grid-cols-1 gap-4 p-4 sm:p-6 md:grid-cols-3">
-      {COLUMNS.map((column) => (
-        <Column key={column.id} column={column} actions={actions} />
+    <main
+      className={`grid flex-1 grid-cols-1 gap-4 p-4 sm:p-6 ${
+        columnIds.length === 4 ? "md:grid-cols-2 xl:grid-cols-4" : "md:grid-cols-3"
+      }`}
+    >
+      {columnIds.map((columnId) => (
+        <Column key={columnId} columnId={columnId} actions={actions} />
       ))}
     </main>
   );

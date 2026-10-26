@@ -15,6 +15,7 @@ import {
   joinSchema,
   PROTOCOL_VERSION,
   setStageSchema,
+  setTemplateSchema,
   setVotesSchema,
   startTimerSchema,
   ungroupCardSchema,
@@ -311,6 +312,9 @@ export function registerRealtime(
     );
     command("retro:focus", focusSchema, async (retroId, { cardId }) => {
       unwrap(await store.setFocus(retroId, cardId));
+    });
+    command("retro:template", setTemplateSchema, async (retroId, { template }) => {
+      unwrap(await store.setTemplate(retroId, template));
     });
     command("retro:handover", handoverSchema, async (retroId, { participantId }) => {
       unwrap(await store.handover(retroId, participantId));

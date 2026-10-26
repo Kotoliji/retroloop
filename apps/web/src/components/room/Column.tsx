@@ -1,6 +1,6 @@
 "use client";
 
-import { LIMITS, type COLUMNS } from "@retro/shared";
+import { columnsOf, LIMITS, type ColumnId, type TemplateId } from "@retro/shared";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -9,38 +9,38 @@ import { useRetroStore } from "@/lib/retro-store";
 import type { RoomActions } from "@/lib/use-retro-room";
 import { CardGroupView } from "./CardGroupView";
 
-export const ACCENTS = {
-  "went-well": "border-t-emerald-500",
-  "to-improve": "border-t-amber-500",
-  "try-next": "border-t-sky-500",
-} as const;
+const ACCENTS = ["border-t-emerald-500", "border-t-amber-500", "border-t-sky-500", "border-t-violet-500"];
 
-type ColumnDef = (typeof COLUMNS)[number];
+/** Columns are colored by position, so every format gets the same palette. */
+export function accentFor(template: TemplateId, columnId: ColumnId) {
+  return ACCENTS[Math.max(0, columnsOf(template).indexOf(columnId))];
+}
 
-export function Column({ column, actions }: { column: ColumnDef; actions: RoomActions }) {
+export function Column({ columnId, actions }: { columnId: ColumnId; actions: RoomActions }) {
   const t = useTranslations("Board");
-  const title = t(`columns.${column.id}`);
-  const cards = useRetroStore(useShallow((s) => cardsIn(s.cards, column.id)));
+  const title = t(`columns.${columnId}`);
+  const template = useRetroStore((s) => s.retro?.template ?? "classic");
+  const cards = useRetroStore(useShallow((s) => cardsIn(s.cards, columnId)));
   const stage = useRetroStore((s) => s.retro?.stage);
   const joined = useRetroStore((s) => s.status === "joined");
   const [draft, setDraft] = useState("");
-  const inputId = `add-${column.id}`;
+  const inputId = `add-${columnId}`;
   const groups = groupCards(cards);
 
   async function submit() {
     const text = draft.trim();
     if (!text) return;
     setDraft("");
-    const saved = await actions.addCard(column.id, text);
+    const saved = await actions.addCard(columnId, text);
     if (!saved) setDraft(text);
   }
 
   return (
     <section
-      aria-labelledby={`${column.id}-title`}
-      className={`flex flex-col gap-3 rounded-xl border border-t-4 border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/50 ${ACCENTS[column.id]}`}
+      aria-labelledby={`${columnId}-title`}
+      className={`flex flex-col gap-3 rounded-xl border border-t-4 border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/50 ${accentFor(template, columnId)}`}
     >
-      <h2 id={`${column.id}-title`} className="flex items-baseline justify-between px-1 font-semibold">
+      <h2 id={`${columnId}-title`} className="flex items-baseline justify-between px-1 font-semibold">
         {title}
         <span className="text-sm font-normal text-zinc-500">{cards.length}</span>
       </h2>

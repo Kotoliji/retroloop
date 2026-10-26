@@ -8,6 +8,7 @@ import {
   LIMITS,
   retroIdSchema,
   stageSchema,
+  templateIdSchema,
   type ActionItemView,
   type CardView,
   type CreatedRetro,
@@ -77,6 +78,7 @@ export const startTimerSchema = z.object({
 });
 export const focusSchema = z.object({ cardId: z.uuid().nullable() });
 export const handoverSchema = z.object({ participantId: z.uuid() });
+export const setTemplateSchema = z.object({ template: templateIdSchema });
 export const emptySchema = z.object({}).optional();
 
 const actionText = z.string().trim().min(1).max(LIMITS.actionLength);
@@ -176,6 +178,8 @@ export interface ClientToServerEvents {
   "retro:votes": (request: { votesPerPerson: number }, ack: Ack<null>) => void;
   "retro:focus": (request: { cardId: string | null }, ack: Ack<null>) => void;
   "retro:handover": (request: { participantId: string }, ack: Ack<null>) => void;
+  /** Only while writing and before anyone has added a card. */
+  "retro:template": (request: { template: RetroMeta["template"] }, ack: Ack<null>) => void;
   "timer:start": (request: { seconds: number }, ack: Ack<null>) => void;
   "timer:stop": (request: Record<string, never>, ack: Ack<null>) => void;
   /** Creates the team's next retro; the caller becomes its facilitator. */

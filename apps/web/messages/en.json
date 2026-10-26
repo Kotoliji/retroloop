@@ -117,7 +117,21 @@
     "columns": {
       "went-well": "Went well",
       "to-improve": "To improve",
-      "try-next": "Try next"
+      "try-next": "Try next",
+      "start": "Start",
+      "stop": "Stop",
+      "continue": "Continue",
+      "mad": "Mad",
+      "sad": "Sad",
+      "glad": "Glad",
+      "liked": "Liked",
+      "learned": "Learned",
+      "lacked": "Lacked",
+      "longed-for": "Longed for",
+      "wind": "Wind — what pushes us",
+      "anchors": "Anchors — what holds us back",
+      "rocks": "Rocks — risks ahead",
+      "island": "Island — where we want to be"
     },
     "addCard": "Add a card to {column}",
     "addPlaceholder": "Add a card — Enter to post",
@@ -241,5 +255,13 @@
   "Footer": {
     "privacy": "Privacy",
     "tagline": "Free sprint retrospectives."
+  },
+  "Templates": {
+    "label": "Format",
+    "classic": "Went well / To improve / Try next",
+    "start-stop-continue": "Start, Stop, Continue",
+    "mad-sad-glad": "Mad, Sad, Glad",
+    "four-ls": "4 Ls",
+    "sailboat": "Sailboat"
   }
 }

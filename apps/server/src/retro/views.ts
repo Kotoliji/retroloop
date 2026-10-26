@@ -1,9 +1,18 @@
-import type { ActionItemView, ActionStatus, CardView, ColumnId, RetroMeta, Stage } from "@retro/shared";
+import type {
+  ActionItemView,
+  ActionStatus,
+  CardView,
+  ColumnId,
+  RetroMeta,
+  Stage,
+  TemplateId,
+} from "@retro/shared";
 
 export interface RetroRow {
   id: string;
   teamId: string;
   number: number;
+  template: string;
   title: string;
   stage: string;
   hasReview: boolean;
@@ -45,6 +54,7 @@ export function viewMeta(retro: RetroRow): RetroMeta {
   return {
     id: retro.id,
     title: retro.title,
+    template: retro.template as TemplateId,
     teamId: retro.teamId,
     teamName: retro.team.name,
     number: retro.number,
