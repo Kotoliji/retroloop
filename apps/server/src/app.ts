@@ -12,7 +12,8 @@ import { collectStats } from "./stats";
 
 export interface HealthProbes {
   database(): Promise<boolean>;
-  redis(): Promise<boolean>;
+  /** Absent when Redis is not configured. */
+  redis?: () => Promise<boolean>;
 }
 
 export interface AppOptions {
@@ -70,9 +71,9 @@ export function buildApp({
     api.get("/health", async (_req, reply): Promise<HealthStatus> => {
       const [database, redis] = await Promise.all([
         probe(probes.database, probeTimeoutMs),
-        probe(probes.redis, probeTimeoutMs),
+        probes.redis ? probe(probes.redis, probeTimeoutMs) : ("off" as const),
       ]);
-      const healthy = database === "ok" && redis === "ok";
+      const healthy = database === "ok" && redis !== "down";
       reply.code(healthy ? 200 : 503);
       return { status: healthy ? "ok" : "degraded", checks: { database, redis } };
     });

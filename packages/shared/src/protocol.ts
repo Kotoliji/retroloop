@@ -203,7 +203,8 @@ export interface ClientToServerEvents {
   "analytics:track": (request: { name: (typeof CLIENT_EVENTS)[number] }) => void;
 }
 
-export type HealthCheck = "ok" | "down";
+/** "off" means the dependency is not configured (Redis is optional with one instance). */
+export type HealthCheck = "ok" | "down" | "off";
 
 export interface HealthStatus {
   status: "ok" | "degraded";

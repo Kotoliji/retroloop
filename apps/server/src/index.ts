@@ -14,10 +14,11 @@ const REMINDER_CHECK_MS = 10 * 60_000;
 
 const config = loadConfig();
 const prisma = createPrisma(config.DATABASE_URL);
-const redis = createClient({ url: config.REDIS_URL });
+// Redis connects several server instances; a single instance runs without it.
+const redis = config.REDIS_URL ? createClient({ url: config.REDIS_URL }) : null;
 // Socket.IO needs a second connection: a subscribed Redis client can do nothing else.
-const subscriber = redis.duplicate();
-await Promise.all([redis.connect(), subscriber.connect()]);
+const subscriber = redis?.duplicate() ?? null;
+if (redis && subscriber) await Promise.all([redis.connect(), subscriber.connect()]);
 const store = createRetroStore(prisma);
 const mailer = config.SMTP_URL ? createSmtpMailer(config.SMTP_URL, config.SMTP_FROM) : null;
 const analytics = createAnalytics(prisma, (err, name) => app.log.warn({ err, name }, "analytics event dropped"));
@@ -31,13 +32,13 @@ const { app } = buildApp({
   analytics,
   features: { reminders: mailer !== null },
   // Broadcasts and presence work across every instance connected to this Redis.
-  adapter: createAdapter(redis, subscriber),
+  adapter: redis && subscriber ? createAdapter(redis, subscriber) : undefined,
   probes: {
     database: async () => (await prisma.$queryRaw`SELECT 1`) !== null,
-    redis: async () => (await redis.ping()) === "PONG",
+    redis: redis ? async () => (await redis.ping()) === "PONG" : undefined,
   },
 });
-for (const client of [redis, subscriber]) client.on("error", (err) => app.log.error({ err }, "redis error"));
+for (const client of [redis, subscriber]) client?.on("error", (err) => app.log.error({ err }, "redis error"));
 
 async function purge() {
   try {
@@ -65,7 +66,7 @@ const reminders = setInterval(remind, REMINDER_CHECK_MS);
 app.addHook("onClose", async () => {
   clearInterval(retention);
   clearInterval(reminders);
-  await Promise.allSettled([prisma.$disconnect(), redis.quit(), subscriber.quit()]);
+  await Promise.allSettled([prisma.$disconnect(), redis?.quit(), subscriber?.quit()]);
 });
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {

@@ -27,6 +27,12 @@ describe("GET /health", () => {
     expect(res.statusCode).toBe(503);
     expect(res.json().checks.database).toBe("down");
   });
+
+  it("is ok without Redis, which a single instance does not need", async () => {
+    const res = await buildTestApp({ database: async () => true }).inject("/health");
+    expect(res.statusCode).toBe(200);
+    expect(res.json().checks).toEqual({ database: "ok", redis: "off" });
+  });
 });
 
 describe("retros over HTTP", () => {

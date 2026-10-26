@@ -3,7 +3,8 @@ import { z } from "zod";
 const envSchema = z.object({
   PORT: z.coerce.number().int().default(4000),
   DATABASE_URL: z.string().url(),
-  REDIS_URL: z.string().url(),
+  /** Optional with a single instance; needed to run several behind a load balancer. */
+  REDIS_URL: z.preprocess((v) => v || undefined, z.string().url().optional()),
   WEB_ORIGIN: z.string().url(),
   /** Behind a reverse proxy, trust X-Forwarded-For so rate limits see real client IPs. */
   TRUST_PROXY: z
