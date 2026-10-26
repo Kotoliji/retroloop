@@ -14,6 +14,7 @@ import {
   type ParticipantView,
   type RetroMeta,
   type RetroSnapshot,
+  type SurveyAnswer,
   type TeamStats,
 } from "./board";
 
@@ -108,6 +109,23 @@ export type ReviewActionRequest = z.infer<typeof reviewActionSchema>;
 
 export const deleteActionSchema = z.object({ id: z.uuid() });
 
+export const surveySchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z
+    .string()
+    .trim()
+    .max(LIMITS.surveyCommentLength)
+    .transform((c) => c || null)
+    .nullable(),
+  quotable: z.boolean(),
+  locale: z.string().max(10).optional(),
+});
+export type SurveyRequest = z.input<typeof surveySchema>;
+
+/** Things that happen only in the browser and are counted anonymously. */
+export const CLIENT_EVENTS = ["export_markdown", "export_csv", "export_ics", "export_github"] as const;
+export const trackSchema = z.object({ name: z.enum(CLIENT_EVENTS) });
+
 export type ErrorCode =
   | "invalid"
   | "not_found"
@@ -137,6 +155,8 @@ export interface ServerToClientEvents {
   /** Many cards changed at once (a stage change or a regroup): replace them all. */
   "retro:cards": (cards: CardView[]) => void;
   "actions:changed": (payload: { actions: ActionItemView[]; stats: TeamStats }) => void;
+  /** The facilitator deleted the retro; everything in it is gone. */
+  "retro:deleted": () => void;
 }
 
 export interface ClientToServerEvents {
@@ -163,6 +183,10 @@ export interface ClientToServerEvents {
   "action:edit": (request: EditActionRequest, ack: Ack<null>) => void;
   "action:delete": (request: { id: string }, ack: Ack<null>) => void;
   "action:review": (request: ReviewActionRequest, ack: Ack<null>) => void;
+  "survey:submit": (request: SurveyRequest, ack: Ack<SurveyAnswer>) => void;
+  /** Facilitator only: deletes the retro and everything in it. */
+  "retro:delete": (request: Record<string, never>, ack: Ack<null>) => void;
+  "analytics:track": (request: { name: (typeof CLIENT_EVENTS)[number] }) => void;
 }
 
 export type HealthCheck = "ok" | "down";

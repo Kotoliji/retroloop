@@ -9,6 +9,8 @@ import {
   type Result,
   type ReviewActionRequest,
   type Stage,
+  type SurveyRequest,
+  type CLIENT_EVENTS,
 } from "@retro/shared";
 import { useCallback, useEffect, useRef } from "react";
 import { useRetroStore } from "./retro-store";
@@ -60,14 +62,20 @@ export function useRetroRoom(retroId: string, name: string) {
     }
 
     socket.on("connect", join);
-    socket.on("disconnect", () => store.setStatus("offline"));
-    socket.on("connect_error", () => store.setStatus("offline"));
+    // A deleted retro stays deleted: closing the socket afterwards is not "offline".
+    const offline = () => useRetroStore.getState().status !== "deleted" && store.setStatus("offline");
+    socket.on("disconnect", offline);
+    socket.on("connect_error", offline);
     socket.on("card:upserted", store.upsert);
     socket.on("card:deleted", ({ id }) => store.remove(id));
     socket.on("retro:cards", store.setCards);
     socket.on("retro:meta", store.setMeta);
     socket.on("participants:changed", store.setParticipants);
     socket.on("actions:changed", store.setActions);
+    socket.on("retro:deleted", () => {
+      store.setStatus("deleted");
+      socket.disconnect();
+    });
 
     // Connect on the next tick: React's development double-mount cleans up the
     // first mount immediately, and this way it never opens a socket.
@@ -208,6 +216,14 @@ export function useRetroRoom(retroId: string, name: string) {
       [send],
     ),
     stopTimer: useCallback(() => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("timer:stop", {})), [send]),
+    deleteRetro: useCallback(async () => {
+      const deleted = await send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("retro:delete", {}));
+      if (deleted) {
+        useRetroStore.getState().setStatus("deleted");
+        socketRef.current?.disconnect();
+      }
+      return deleted;
+    }, [send]),
     /** Creates the team's next retro; resolves with it, or null if that failed. */
     nextRetro: useCallback(async () => {
       try {
@@ -240,7 +256,33 @@ export function useRetroRoom(retroId: string, name: string) {
     ),
   };
 
-  return { addCard, editCard, deleteCard, groupCard, ungroupCard, vote, facilitator, actionItems };
+  const submitSurvey = useCallback(async (request: SurveyRequest) => {
+    try {
+      const result = await socketRef.current?.timeout(ACK_TIMEOUT_MS).emitWithAck("survey:submit", request);
+      if (result?.ok) useRetroStore.getState().setSurvey(result.data);
+      return Boolean(result?.ok);
+    } catch {
+      return false;
+    }
+  }, []);
+
+  /** Counts something that happens only in the browser, such as an export. */
+  const track = useCallback((name: (typeof CLIENT_EVENTS)[number]) => {
+    socketRef.current?.emit("analytics:track", { name });
+  }, []);
+
+  return {
+    addCard,
+    editCard,
+    deleteCard,
+    groupCard,
+    ungroupCard,
+    vote,
+    facilitator,
+    actionItems,
+    submitSurvey,
+    track,
+  };
 }
 
 export type RoomActions = ReturnType<typeof useRetroRoom>;

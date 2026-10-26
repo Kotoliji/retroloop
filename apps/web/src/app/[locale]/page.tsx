@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 import { setRequestLocale } from "next-intl/server";
 import { use } from "react";
 import { CreateRetroForm } from "@/components/CreateRetroForm";
+import { Footer } from "@/components/Footer";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 const STEPS = ["write", "group", "discuss", "review"] as const;
@@ -74,6 +75,7 @@ export default function Landing({ params }: PageProps<"/[locale]">) {
           </div>
         </section>
       </main>
+      <Footer />
     </div>
   );
 }

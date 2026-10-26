@@ -33,6 +33,7 @@ export const LIMITS = {
   actionLength: 200,
   /** Few, owned, dated items get done; long lists don't. */
   maxActionsPerRetro: 3,
+  surveyCommentLength: 1000,
 } as const;
 
 export const retroIdSchema = z.string().regex(/^[A-Za-z0-9_-]{10}$/);
@@ -125,10 +126,19 @@ export interface TeamStats {
   total: number;
 }
 
+/** One participant's answer to "how useful was this retro?". */
+export interface SurveyAnswer {
+  rating: number;
+  comment: string | null;
+  quotable: boolean;
+}
+
 export interface RetroSnapshot {
   retro: RetroMeta;
   participants: ParticipantView[];
   cards: CardView[];
   actions: ActionItemView[];
   stats: TeamStats;
+  /** This viewer's own survey answer, if they gave one. */
+  survey: SurveyAnswer | null;
 }

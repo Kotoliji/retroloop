@@ -7,6 +7,8 @@ import {
   editCardSchema,
   emptySchema,
   reviewActionSchema,
+  surveySchema,
+  trackSchema,
   focusSchema,
   groupCardSchema,
   handoverSchema,
@@ -27,6 +29,7 @@ import {
 import type { FastifyBaseLogger } from "fastify";
 import type { Server, Socket } from "socket.io";
 import type { z } from "zod";
+import type { Analytics } from "./analytics";
 import { Presence } from "./retro/presence";
 import { STORE_FAILURES, type RetroStore, type StoreFailure } from "./retro/store";
 import { viewAction, viewCards, viewMeta, type CardRow, type RetroRow } from "./retro/views";
@@ -52,7 +55,12 @@ function unwrap<T>(result: T | StoreFailure): T {
   return result as T;
 }
 
-export function registerRealtime(io: RealtimeServer, store: RetroStore, log: FastifyBaseLogger) {
+export function registerRealtime(
+  io: RealtimeServer,
+  store: RetroStore,
+  analytics: Analytics,
+  log: FastifyBaseLogger,
+) {
   const presence = new Presence();
 
   async function participantsOf(retroId: string): Promise<ParticipantView[]> {
@@ -187,7 +195,11 @@ export function registerRealtime(io: RealtimeServer, store: RetroStore, log: Fas
         const [board, participants] = await Promise.all([store.board(retroId), participantsOf(retroId)]);
         if (!board) throw new Failure("not_found");
         const meta = viewMeta(board.retro);
-        const { actions, stats } = await actionsOf(board.retro);
+        const [{ actions, stats }, survey] = await Promise.all([
+          actionsOf(board.retro),
+          store.surveyOf(participant.id),
+        ]);
+        if (joined.created) analytics.track("participant_joined", { teamId: meta.teamId, retroId });
         socket.to(room(retroId)).emit("participants:changed", participants);
         // Claiming the facilitator role with the host key changes the meta for everyone.
         if (meta.facilitatorId === participant.id) socket.to(room(retroId)).emit("retro:meta", meta);
@@ -200,6 +212,7 @@ export function registerRealtime(io: RealtimeServer, store: RetroStore, log: Fas
             cards: viewCards(board.cards, board.votes, participant.id, meta.stage),
             actions,
             stats,
+            survey,
           },
         };
       }),
@@ -211,6 +224,7 @@ export function registerRealtime(io: RealtimeServer, store: RetroStore, log: Fas
         const { retroId, participantId } = session(socket);
         const card = unwrap(await store.addCard(retroId, participantId, req));
         await broadcastCard(retroId, card);
+        analytics.track("card_added", { retroId });
         return viewCards([card], [], participantId, "write")[0];
       }),
     );
@@ -277,6 +291,7 @@ export function registerRealtime(io: RealtimeServer, store: RetroStore, log: Fas
       const retro = await store.getRetro(retroId);
       if (stage === "review" && !retro?.hasReview) throw new Failure("wrong_stage");
       await store.setStage(retroId, stage);
+      analytics.track("stage_entered", { teamId: retro?.teamId, retroId }, { stage });
       return { cards: true }; // visibility and vote totals depend on the stage
     });
     command("retro:votes", setVotesSchema, (retroId, { votesPerPerson }) =>
@@ -299,6 +314,7 @@ export function registerRealtime(io: RealtimeServer, store: RetroStore, log: Fas
         const { retroId } = await facilitatorSession(socket);
         const next = unwrap(await store.createNextRetro(retroId));
         await broadcastMeta(retroId); // everyone gets the link to the next retro
+        analytics.track("next_retro_started", { retroId: next.id });
         return next;
       }),
     );
@@ -315,6 +331,8 @@ export function registerRealtime(io: RealtimeServer, store: RetroStore, log: Fas
           const { retroId } = session(socket);
           unwrap(await run(retroId, input));
           await broadcastActions(retroId);
+          const { status } = input as { status?: string }; // reviews report their outcome
+          analytics.track(event.replace(":", "_"), { retroId }, status ? { status } : undefined);
           return null;
         }) as never,
       );
@@ -324,6 +342,35 @@ export function registerRealtime(io: RealtimeServer, store: RetroStore, log: Fas
     actionEvent("action:edit", editActionSchema, (retroId, req) => store.editAction(retroId, req));
     actionEvent("action:delete", deleteActionSchema, (retroId, { id }) => store.deleteAction(retroId, id));
     actionEvent("action:review", reviewActionSchema, (retroId, req) => store.reviewAction(retroId, req));
+
+    socket.on(
+      "survey:submit",
+      handle(socket, surveySchema, async ({ locale, ...answer }) => {
+        const { retroId, participantId } = session(socket);
+        const saved = unwrap(await store.answerSurvey(retroId, participantId, { ...answer, locale }));
+        analytics.track("survey_answered", { retroId }, { rating: saved.rating, quotable: saved.quotable });
+        return saved;
+      }),
+    );
+
+    socket.on(
+      "retro:delete",
+      handle(socket, emptySchema, async () => {
+        const { retroId } = await facilitatorSession(socket);
+        socket.to(room(retroId)).emit("retro:deleted");
+        await store.deleteRetro(retroId);
+        analytics.track("retro_deleted");
+        io.in(room(retroId)).socketsLeave(room(retroId));
+        return null;
+      }),
+    );
+
+    // Browser-only events (exports). No ack: counting must never slow the page down.
+    socket.on("analytics:track", (payload) => {
+      const parsed = trackSchema.safeParse(payload);
+      const retroId = socket.data.retroId;
+      if (parsed.success && retroId) analytics.track(parsed.data.name, { retroId });
+    });
 
     socket.on("disconnect", () => {
       leave(socket).catch((err) => log.error({ err }, "leave failed"));

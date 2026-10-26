@@ -17,6 +17,7 @@ import {
 import { useIsFacilitator, useRetroStore } from "@/lib/retro-store";
 import { saveGithubRepo, saveHostKey, savedGithubRepo } from "@/lib/storage";
 import type { RoomActions } from "@/lib/use-retro-room";
+import { SurveyForm } from "./SurveyForm";
 import { TeamScore } from "./TeamScore";
 
 function download(filename: string, type: string, content: string) {
@@ -66,6 +67,7 @@ export function Summary({ actions }: { actions: RoomActions }) {
 
   async function copyMarkdown() {
     const markdown = toMarkdown(meta, topics, all, today(), labels);
+    actions.track("export_markdown");
     try {
       await navigator.clipboard.writeText(markdown);
       setCopied(true);
@@ -99,6 +101,7 @@ export function Summary({ actions }: { actions: RoomActions }) {
               meta={meta}
               labels={labels}
               repo={isGithubRepo(repo) ? repo : null}
+              onExport={actions.track}
             />
           ))}
         </ul>
@@ -114,7 +117,10 @@ export function Summary({ actions }: { actions: RoomActions }) {
           </button>
           <button
             className={button}
-            onClick={() => download(`${slug(meta)}-jira.csv`, "text/csv", toJiraCsv(meta, all, labels))}
+            onClick={() => {
+              actions.track("export_csv");
+              download(`${slug(meta)}-jira.csv`, "text/csv", toJiraCsv(meta, all, labels));
+            }}
             disabled={agreed.length === 0}
           >
             {t("jiraCsv")}
@@ -133,6 +139,8 @@ export function Summary({ actions }: { actions: RoomActions }) {
           />
         </label>
       </section>
+
+      <SurveyForm actions={actions} />
 
       <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <TeamScore />
@@ -158,7 +166,27 @@ export function Summary({ actions }: { actions: RoomActions }) {
           <p className="text-sm text-zinc-500">{t("waitNext")}</p>
         )}
       </section>
+
+      {isFacilitator && <DangerZone actions={actions} />}
     </main>
+  );
+}
+
+function DangerZone({ actions }: { actions: RoomActions }) {
+  const t = useTranslations("Danger");
+  return (
+    <section className="mt-6 flex flex-col gap-2 rounded-xl border border-red-200 p-4 dark:border-red-900">
+      <h2 className="font-semibold text-red-700 dark:text-red-400">{t("title")}</h2>
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("body")}</p>
+      <button
+        onClick={() => {
+          if (window.confirm(t("confirm"))) void actions.facilitator.deleteRetro();
+        }}
+        className="self-start rounded-lg border border-red-300 px-3 py-1.5 text-sm font-medium text-red-700 transition hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
+      >
+        {t("button")}
+      </button>
+    </section>
   );
 }
 
@@ -167,9 +195,10 @@ interface AgreedItemProps {
   meta: RetroMeta;
   labels: ExportLabels;
   repo: string | null;
+  onExport: RoomActions["track"];
 }
 
-function AgreedItem({ item, meta, labels, repo }: AgreedItemProps) {
+function AgreedItem({ item, meta, labels, repo, onExport }: AgreedItemProps) {
   const t = useTranslations("Summary");
   const tc = useTranslations("Common");
   const locale = useLocale();
@@ -183,7 +212,10 @@ function AgreedItem({ item, meta, labels, repo }: AgreedItemProps) {
       </p>
       <div className="mt-2 flex gap-4 text-sm">
         <button
-          onClick={() => download(`action-${item.dueDate}.ics`, "text/calendar", toIcs(meta, item, labels))}
+          onClick={() => {
+            onExport("export_ics");
+            download(`action-${item.dueDate}.ics`, "text/calendar", toIcs(meta, item, labels));
+          }}
           className="font-medium text-sky-700 hover:underline dark:text-sky-400"
           aria-label={t("calendarLabel", { text: item.text })}
         >
@@ -194,6 +226,7 @@ function AgreedItem({ item, meta, labels, repo }: AgreedItemProps) {
             href={githubIssueUrl(repo, meta, item, labels)}
             target="_blank"
             rel="noreferrer"
+            onClick={() => onExport("export_github")}
             className="font-medium text-sky-700 hover:underline dark:text-sky-400"
             aria-label={t("githubIssueLabel", { text: item.text })}
           >

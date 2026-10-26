@@ -33,12 +33,12 @@ export function StageBar({ actions }: { actions: RoomActions }) {
       className="flex flex-col gap-3 border-b border-zinc-200 px-4 py-3 sm:px-6 dark:border-zinc-800"
     >
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-        <ol className="flex items-center gap-1 text-sm">
+        <ol className="-mx-1 flex max-w-full items-center gap-1 overflow-x-auto px-1 text-sm">
           {stages.map((stage, i) => (
             <li
               key={stage}
               aria-current={stage === retro.stage ? "step" : undefined}
-              className={`rounded-full px-3 py-1 ${
+              className={`rounded-full px-3 py-1 whitespace-nowrap ${
                 stage === retro.stage
                   ? "bg-zinc-900 font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
                   : "text-zinc-500"

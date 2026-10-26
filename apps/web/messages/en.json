@@ -198,5 +198,48 @@
     "agreedIn": "Agreed in {retro}.",
     "calendarTitle": "Due: {text}",
     "retroTitle": "Retro {number}"
+  },
+  "Survey": {
+    "title": "How useful was this retro?",
+    "ratings": {
+      "1": "Not useful",
+      "2": "A little",
+      "3": "Somewhat",
+      "4": "Useful",
+      "5": "Very useful"
+    },
+    "commentLabel": "Anything we should improve in Retroloop? (optional)",
+    "quotable": "You may quote this on the website, without my name",
+    "submit": "Send",
+    "update": "Update my answer",
+    "thanks": "Thank you — this helps us make Retroloop better."
+  },
+  "Danger": {
+    "title": "Delete this retro",
+    "body": "Removes the cards, votes, names, action items and answers in this retro for everyone. This cannot be undone.",
+    "button": "Delete retro",
+    "confirm": "Delete this retro for everyone? This cannot be undone.",
+    "deletedTitle": "This retro was deleted",
+    "deletedBody": "The facilitator deleted it, along with everything that was in it."
+  },
+  "Privacy": {
+    "title": "Privacy",
+    "updated": "Last updated: {date}",
+    "intro": "Retroloop is built to need as little data as possible. There are no accounts, no tracking cookies and no ads.",
+    "storeTitle": "What is stored",
+    "store": "The team name, the names people type when they join, cards, votes, action items with their owners and due dates, and answers to the end-of-retro survey. Nothing else is asked for: no email, no password.",
+    "browserTitle": "In your browser",
+    "browser": "Your browser keeps your name and a secret key per retro (so a reload brings you back as yourself) in local storage. These are not cookies and are never used for tracking.",
+    "analyticsTitle": "Anonymous usage counts",
+    "analytics": "To learn whether Retroloop helps, it counts events such as \"a retro was created\" or \"a card was added\". These counts never include names, card text, IP addresses or browser details.",
+    "retentionTitle": "How long it is kept",
+    "retention": "A team's data is deleted automatically once it has not started a retro for 12 months. The facilitator can delete a retro, and everything in it, at any time from its wrap-up screen.",
+    "contactTitle": "Contact",
+    "contact": "Questions or requests about your data: {email}",
+    "contactFallback": "Questions or requests about your data: contact the operator of this site."
+  },
+  "Footer": {
+    "privacy": "Privacy",
+    "tagline": "Free sprint retrospectives."
   }
 }

@@ -2,6 +2,7 @@ import cors from "@fastify/cors";
 import { createRetroSchema, retroIdSchema, type HealthStatus } from "@retro/shared";
 import Fastify from "fastify";
 import { Server } from "socket.io";
+import type { Analytics } from "./analytics";
 import { registerRealtime, type RealtimeServer } from "./realtime";
 import type { RetroStore } from "./retro/store";
 
@@ -14,6 +15,7 @@ export interface AppOptions {
   webOrigin: string;
   probes: HealthProbes;
   store: RetroStore;
+  analytics: Analytics;
   logger?: boolean;
   probeTimeoutMs?: number;
 }
@@ -34,7 +36,14 @@ async function probe(check: () => Promise<boolean>, timeoutMs: number) {
   }
 }
 
-export function buildApp({ webOrigin, probes, store, logger = true, probeTimeoutMs = 1000 }: AppOptions) {
+export function buildApp({
+  webOrigin,
+  probes,
+  store,
+  analytics,
+  logger = true,
+  probeTimeoutMs = 1000,
+}: AppOptions) {
   const app = Fastify({ logger });
   app.register(cors, { origin: webOrigin });
 
@@ -51,7 +60,9 @@ export function buildApp({ webOrigin, probes, store, logger = true, probeTimeout
   app.post("/retros", async (req, reply) => {
     const body = createRetroSchema.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: "invalid" });
-    return reply.code(201).send(await store.createRetro(body.data.teamName));
+    const created = await store.createRetro(body.data.teamName);
+    analytics.track("team_created", { retroId: created.id });
+    return reply.code(201).send(created);
   });
 
   app.get<{ Params: { id: string } }>("/retros/:id", async (req, reply) => {
@@ -61,7 +72,7 @@ export function buildApp({ webOrigin, probes, store, logger = true, probeTimeout
   });
 
   const io: RealtimeServer = new Server(app.server, { cors: { origin: webOrigin } });
-  registerRealtime(io, store, app.log);
+  registerRealtime(io, store, analytics, app.log);
 
   app.addHook("onClose", async () => {
     await io.close();

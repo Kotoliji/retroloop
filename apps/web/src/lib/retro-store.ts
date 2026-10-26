@@ -1,8 +1,16 @@
-import type { ActionItemView, CardView, JoinResult, ParticipantView, RetroMeta, TeamStats } from "@retro/shared";
+import type {
+  ActionItemView,
+  CardView,
+  JoinResult,
+  ParticipantView,
+  RetroMeta,
+  SurveyAnswer,
+  TeamStats,
+} from "@retro/shared";
 import { create } from "zustand";
 import { removeCard, setMyVotes, upsertCard } from "./board-state";
 
-export type RoomStatus = "connecting" | "joined" | "offline" | "not_found" | "error";
+export type RoomStatus = "connecting" | "joined" | "offline" | "not_found" | "deleted" | "error";
 
 interface RetroState {
   status: RoomStatus;
@@ -12,6 +20,7 @@ interface RetroState {
   cards: CardView[];
   actions: ActionItemView[];
   stats: TeamStats;
+  survey: SurveyAnswer | null;
   /** Server clock minus local clock, in milliseconds. */
   clockOffset: number;
 
@@ -26,6 +35,7 @@ interface RetroState {
   setParticipants(participants: ParticipantView[]): void;
   setActions(payload: { actions: ActionItemView[]; stats: TeamStats }): void;
   setClockOffset(offset: number): void;
+  setSurvey(survey: SurveyAnswer): void;
 }
 
 export const useRetroStore = create<RetroState>()((set) => ({
@@ -34,6 +44,7 @@ export const useRetroStore = create<RetroState>()((set) => ({
   cards: [],
   actions: [],
   stats: { done: 0, total: 0 },
+  survey: null,
   clockOffset: 0,
 
   reset: () =>
@@ -45,6 +56,7 @@ export const useRetroStore = create<RetroState>()((set) => ({
       cards: [],
       actions: [],
       stats: { done: 0, total: 0 },
+      survey: null,
     }),
   setStatus: (status) => set({ status }),
   // A join (first or after a reconnect) replaces everything: the server snapshot
@@ -58,6 +70,7 @@ export const useRetroStore = create<RetroState>()((set) => ({
       cards: snapshot.cards,
       actions: snapshot.actions,
       stats: snapshot.stats,
+      survey: snapshot.survey,
     }),
   setMeta: (retro) => set({ retro }),
   setCards: (cards) => set({ cards }),
@@ -67,6 +80,7 @@ export const useRetroStore = create<RetroState>()((set) => ({
   setParticipants: (participants) => set({ participants }),
   setActions: ({ actions, stats }) => set({ actions, stats }),
   setClockOffset: (clockOffset) => set({ clockOffset }),
+  setSurvey: (survey) => set({ survey }),
 }));
 
 export const useIsFacilitator = () =>

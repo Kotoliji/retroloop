@@ -6,6 +6,7 @@ import type {
 } from "@retro/shared";
 import { io as connect, type Socket } from "socket.io-client";
 import { afterAll, afterEach, inject } from "vitest";
+import { createAnalytics } from "../src/analytics";
 import { buildApp, type HealthProbes } from "../src/app";
 import { createPrisma } from "../src/db";
 import { createRetroStore } from "../src/retro/store";
@@ -14,6 +15,7 @@ export type Client = Socket<ServerToClientEvents, ClientToServerEvents>;
 
 export const prisma = createPrisma(inject("databaseUrl"));
 export const store = createRetroStore(prisma);
+export const analytics = createAnalytics(prisma);
 afterAll(() => prisma.$disconnect());
 
 const up: HealthProbes = { database: async () => true, redis: async () => true };
@@ -27,6 +29,7 @@ export function buildTestApp(probes: HealthProbes = up) {
     webOrigin: "http://localhost:3001",
     probes,
     store,
+    analytics,
     logger: false,
     probeTimeoutMs: 50,
   });

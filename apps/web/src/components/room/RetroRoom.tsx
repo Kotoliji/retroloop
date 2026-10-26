@@ -36,15 +36,17 @@ export function RetroRoom() {
 
 function JoinedRoom({ retroId, name }: { retroId: string; name: string }) {
   const t = useTranslations("Room");
+  const td = useTranslations("Danger");
   const actions = useRetroRoom(retroId, name);
   const status = useRetroStore((s) => s.status);
   const retro = useRetroStore((s) => s.retro);
 
-  if (status === "not_found") {
+  if (status === "not_found" || status === "deleted") {
+    const deleted = status === "deleted";
     return (
       <main className="mx-auto flex max-w-md flex-1 flex-col justify-center gap-4 px-6 text-center">
-        <h1 className="text-2xl font-semibold">{t("notFoundTitle")}</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">{t("notFoundBody")}</p>
+        <h1 className="text-2xl font-semibold">{deleted ? td("deletedTitle") : t("notFoundTitle")}</h1>
+        <p className="text-zinc-600 dark:text-zinc-400">{deleted ? td("deletedBody") : t("notFoundBody")}</p>
         <Link href="/" className="font-medium underline underline-offset-4">
           {t("startNew")}
         </Link>

@@ -9,6 +9,7 @@ import {
   type ReviewActionRequest,
   type RetroSummary,
   type Stage,
+  type SurveyAnswer,
   type TeamStats,
 } from "@retro/shared";
 import type { Prisma } from "../db";
@@ -141,7 +142,7 @@ export function createRetroStore(prisma: Prisma) {
       const retro = await prisma.retro.findUnique({ where: { id: retroId } });
       if (!retro) return null;
 
-      let joined: { token: string; participant: { id: string; name: string } } | undefined;
+      let joined: { token: string; participant: { id: string; name: string }; created: boolean } | undefined;
       if (token) {
         const existing = await prisma.participant.findUnique({ where: { tokenHash: hash(token) } });
         if (existing?.retroId === retroId) {
@@ -149,7 +150,7 @@ export function createRetroStore(prisma: Prisma) {
             existing.name === name
               ? existing
               : await prisma.participant.update({ where: { id: existing.id }, data: { name } });
-          joined = { token, participant };
+          joined = { token, participant, created: false };
         }
       }
       if (!joined) {
@@ -157,7 +158,7 @@ export function createRetroStore(prisma: Prisma) {
         const participant = await prisma.participant.create({
           data: { retroId, name, tokenHash: hash(fresh) },
         });
-        joined = { token: fresh, participant };
+        joined = { token: fresh, participant, created: true };
       }
 
       if (hostKey && retro.hostKeyHash === hash(hostKey) && retro.facilitatorId !== joined.participant.id) {
@@ -372,6 +373,54 @@ export function createRetroStore(prisma: Prisma) {
         },
       });
       return count ? true : "not_found";
+    },
+
+    /** One answer per participant; answering again replaces it. Only once the retro is wrapped up. */
+    async answerSurvey(
+      retroId: string,
+      participantId: string,
+      answer: SurveyAnswer & { locale?: string },
+    ): Promise<SurveyAnswer | StoreFailure> {
+      if ((await stageOf(retroId)) !== "done") return "wrong_stage";
+      const data = { ...answer, retroId };
+      const saved = await prisma.surveyResponse.upsert({
+        where: { participantId },
+        create: { ...data, participantId },
+        update: data,
+      });
+      return { rating: saved.rating, comment: saved.comment, quotable: saved.quotable };
+    },
+
+    async surveyOf(participantId: string): Promise<SurveyAnswer | null> {
+      return prisma.surveyResponse.findUnique({
+        where: { participantId },
+        select: { rating: true, comment: true, quotable: true },
+      });
+    },
+
+    /** Deletes a retro and everything in it; a team left without retros goes too. */
+    async deleteRetro(retroId: string) {
+      const retro = await prisma.retro.findUnique({ where: { id: retroId } });
+      if (!retro) return;
+      await prisma.$transaction(async (tx) => {
+        await tx.retro.delete({ where: { id: retroId } });
+        await tx.retro.updateMany({ where: { nextRetroId: retroId }, data: { nextRetroId: null } });
+        if ((await tx.retro.count({ where: { teamId: retro.teamId } })) === 0) {
+          await tx.team.delete({ where: { id: retro.teamId } });
+        }
+      });
+    },
+
+    /**
+     * Data retention: deletes every team whose latest retro was created more
+     * than `days` ago, with all of its retros, cards, names and answers.
+     */
+    async purgeInactiveTeams(days: number, now = new Date()): Promise<number> {
+      const cutoff = new Date(now.getTime() - days * 86_400_000);
+      const { count } = await prisma.team.deleteMany({
+        where: { retros: { none: { createdAt: { gte: cutoff } } } },
+      });
+      return count;
     },
 
     async setStage(retroId: string, stage: Stage) {
