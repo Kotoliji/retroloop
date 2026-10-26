@@ -26,6 +26,7 @@ const { app } = buildApp({
   webOrigin: config.WEB_ORIGIN,
   trustProxy: config.TRUST_PROXY,
   createLimitPerMinute: config.CREATE_LIMIT_PER_MINUTE,
+  admin: config.ADMIN_TOKEN ? { token: config.ADMIN_TOKEN, prisma } : undefined,
   store,
   analytics,
   features: { reminders: mailer !== null },

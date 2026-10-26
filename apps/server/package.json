@@ -11,7 +11,8 @@
     "test": "vitest run",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev && prisma generate",
-    "load-test": "tsx scripts/load-test.ts"
+    "load-test": "tsx scripts/load-test.ts",
+    "stats": "tsx --env-file-if-exists=../../.env scripts/stats.ts"
   },
   "dependencies": {
     "@fastify/cors": "^11.3.1",

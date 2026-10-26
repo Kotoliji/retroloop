@@ -1,11 +1,14 @@
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
+import { timingSafeEqual } from "node:crypto";
 import { createRetroSchema, retroIdSchema, type HealthStatus } from "@retro/shared";
 import Fastify from "fastify";
 import { Server, type ServerOptions } from "socket.io";
 import type { Analytics } from "./analytics";
 import { registerRealtime, type RealtimeServer } from "./realtime";
 import type { RetroStore } from "./retro/store";
+import type { Prisma } from "./db";
+import { collectStats } from "./stats";
 
 export interface HealthProbes {
   database(): Promise<boolean>;
@@ -23,6 +26,8 @@ export interface AppOptions {
   logger?: boolean;
   trustProxy?: boolean;
   createLimitPerMinute?: number;
+  /** With a token and a database, GET /admin/stats answers to `Bearer <token>`. */
+  admin?: { token: string; prisma: Prisma };
   probeTimeoutMs?: number;
 }
 
@@ -52,6 +57,7 @@ export function buildApp({
   logger = true,
   trustProxy = false,
   createLimitPerMinute = 10,
+  admin,
   probeTimeoutMs = 1000,
 }: AppOptions) {
   // Requests are small JSON bodies; anything bigger is not from our client.
@@ -79,6 +85,18 @@ export function buildApp({
       analytics.track("team_created", { retroId: created.id });
       return reply.code(201).send(created);
     });
+
+    // Not there at all unless an operator token is configured.
+    if (admin) {
+      const expected = Buffer.from(`Bearer ${admin.token}`);
+      api.get("/admin/stats", async (req, reply) => {
+        const given = Buffer.from(req.headers.authorization ?? "");
+        if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
+          return reply.code(401).send({ error: "unauthorized" });
+        }
+        return collectStats(admin.prisma);
+      });
+    }
 
     api.get<{ Params: { id: string } }>("/retros/:id", async (req, reply) => {
       const id = retroIdSchema.safeParse(req.params.id);

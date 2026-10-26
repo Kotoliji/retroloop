@@ -26,9 +26,12 @@ afterEach(async () => {
   await Promise.all(cleanups.splice(0).map((fn) => fn()));
 });
 
+export const ADMIN_TOKEN = "test-admin-token-0123456789abcdef";
+
 export function buildTestApp(probes: HealthProbes = up, adapter?: ReturnType<typeof createAdapter>) {
   const { app } = buildApp({
     adapter,
+    admin: { token: ADMIN_TOKEN, prisma },
     webOrigin: "http://localhost:3001",
     probes,
     store,

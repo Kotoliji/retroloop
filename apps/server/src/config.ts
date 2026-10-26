@@ -10,6 +10,8 @@ const envSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
+  /** Enables GET /admin/stats for whoever sends it as a bearer token. */
+  ADMIN_TOKEN: z.preprocess((v) => v || undefined, z.string().min(24).optional()),
   /** New teams per minute from one address; raised only for load tests. */
   CREATE_LIMIT_PER_MINUTE: z.coerce.number().int().positive().default(10),
   /** e.g. smtp://user:pass@smtp.example.com:587 — without it, e-mail reminders are off. */

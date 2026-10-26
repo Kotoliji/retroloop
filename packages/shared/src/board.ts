@@ -159,3 +159,20 @@ export interface RetroSnapshot {
   /** What this server can do; e-mail reminders need SMTP to be configured. */
   features: { reminders: boolean };
 }
+
+/** Operator-only product numbers, served by GET /admin/stats. */
+export interface AdminStats {
+  funnel: { teams: number; reachedDiscussion: number; completed: number; nextRetros: number };
+  activity: { participants: number; cards: number; actionItems: number; exports: number };
+  survey: {
+    answers: number;
+    average: number | null;
+    /** Answers per rating, 1 to 5. */
+    distribution: number[];
+    /** Comments people agreed to have quoted; never with a name. */
+    quotes: { rating: number; comment: string; locale: string | null; date: string }[];
+  };
+  /** Outcomes of items from earlier retros that a later retro reviewed. */
+  followThrough: { done: number; notYet: number; dropped: number };
+  weekly: { week: string; teams: number; nextRetros: number; participants: number }[];
+}

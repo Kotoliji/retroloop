@@ -22,7 +22,7 @@ completed in most teams, and existing tools stop at the board. See
 - [x] **Phase 4** — launch-ready: landing page in English, Ukrainian, Russian and Portuguese, end-of-retro survey, anonymous analytics, privacy page and retention, rate limits, production Docker + Caddy
 - [x] **Phase 5** — retro formats (classic, Start-Stop-Continue, Mad-Sad-Glad, 4 Ls, Sailboat) and opt-in e-mail reminders for owners
 - [x] **Phase 6** — scaling across instances with Redis, a load test, end-to-end tests in real browsers
-- [ ] Phase 7 — admin stats from the survey and analytics
+- [x] **Phase 7** — operator stats: funnel, survey ratings and quotable comments, follow-through, weekly activity
 
 ## Stack
 
@@ -137,6 +137,14 @@ event. Teams with no retro for a year are deleted automatically, and a
 facilitator can delete a retro at any time. Public endpoints are rate-limited:
 10 new teams a minute per address, and each socket gets a token bucket (bursts
 of 40 events, 10 a second sustained).
+
+## Measuring it
+
+With `ADMIN_TOKEN` set, the operator gets a stats page at `/en/admin`: how far
+teams get (created → discussed → finished → came back for another retro), survey
+ratings and the comments people agreed to have quoted, the follow-through rate
+on reviewed action items, and new teams per week. `npm run stats -w @retro/server`
+prints the same numbers as a Markdown table for this README.
 
 ## Checks
 
