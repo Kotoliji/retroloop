@@ -1,12 +1,9 @@
 import cors from "@fastify/cors";
-import {
-  PROTOCOL_VERSION,
-  type ClientToServerEvents,
-  type HealthStatus,
-  type ServerToClientEvents,
-} from "@retro/shared";
+import { createRetroSchema, retroIdSchema, type HealthStatus } from "@retro/shared";
 import Fastify from "fastify";
 import { Server } from "socket.io";
+import { registerRealtime, type RealtimeServer } from "./realtime";
+import type { RetroStore } from "./retro/store";
 
 export interface HealthProbes {
   database(): Promise<boolean>;
@@ -16,6 +13,7 @@ export interface HealthProbes {
 export interface AppOptions {
   webOrigin: string;
   probes: HealthProbes;
+  store: RetroStore;
   logger?: boolean;
   probeTimeoutMs?: number;
 }
@@ -36,7 +34,7 @@ async function probe(check: () => Promise<boolean>, timeoutMs: number) {
   }
 }
 
-export function buildApp({ webOrigin, probes, logger = true, probeTimeoutMs = 1000 }: AppOptions) {
+export function buildApp({ webOrigin, probes, store, logger = true, probeTimeoutMs = 1000 }: AppOptions) {
   const app = Fastify({ logger });
   app.register(cors, { origin: webOrigin });
 
@@ -50,14 +48,20 @@ export function buildApp({ webOrigin, probes, logger = true, probeTimeoutMs = 10
     return { status: healthy ? "ok" : "degraded", checks: { database, redis } };
   });
 
-  const io = new Server<ClientToServerEvents, ServerToClientEvents>(app.server, {
-    cors: { origin: webOrigin },
+  app.post("/retros", async (req, reply) => {
+    const body = createRetroSchema.safeParse(req.body);
+    if (!body.success) return reply.code(400).send({ error: "invalid" });
+    return reply.code(201).send(await store.createRetro(body.data.title));
   });
 
-  io.on("connection", (socket) => {
-    socket.emit("server:hello", { protocolVersion: PROTOCOL_VERSION, serverTime: Date.now() });
-    socket.on("client:ping", (ack) => ack({ serverTime: Date.now() }));
+  app.get<{ Params: { id: string } }>("/retros/:id", async (req, reply) => {
+    const id = retroIdSchema.safeParse(req.params.id);
+    const retro = id.success ? await store.findRetro(id.data) : null;
+    return retro ?? reply.code(404).send({ error: "not_found" });
   });
+
+  const io: RealtimeServer = new Server(app.server, { cors: { origin: webOrigin } });
+  registerRealtime(io, store, app.log);
 
   app.addHook("onClose", async () => {
     await io.close();

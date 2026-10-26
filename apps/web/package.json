@@ -7,14 +7,16 @@
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "eslint",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@retro/shared": "*",
     "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "@retro/shared": "*",
-    "socket.io-client": "^4.8.4"
+    "socket.io-client": "^4.8.4",
+    "zustand": "^5.0.16"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
@@ -24,6 +26,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^5.0.5"
   }
 }

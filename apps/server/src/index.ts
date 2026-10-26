@@ -2,6 +2,7 @@ import { createClient } from "redis";
 import { buildApp } from "./app";
 import { loadConfig } from "./config";
 import { createPrisma } from "./db";
+import { createRetroStore } from "./retro/store";
 
 const config = loadConfig();
 const prisma = createPrisma(config.DATABASE_URL);
@@ -10,6 +11,7 @@ redis.on("error", (err) => app.log.error({ err }, "redis error"));
 
 const { app } = buildApp({
   webOrigin: config.WEB_ORIGIN,
+  store: createRetroStore(prisma),
   probes: {
     database: async () => (await prisma.$queryRaw`SELECT 1`) !== null,
     redis: async () => (await redis.ping()) === "PONG",

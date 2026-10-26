@@ -1,4 +1,13 @@
 import { z } from "zod";
+import {
+  cardTextSchema,
+  columnIdSchema,
+  nameSchema,
+  retroIdSchema,
+  type CardView,
+  type ParticipantView,
+  type RetroSnapshot,
+} from "./board";
 
 /**
  * Wire contract between the web app and the realtime server.
@@ -19,12 +28,51 @@ export const pongSchema = z.object({
 });
 export type Pong = z.infer<typeof pongSchema>;
 
+export const joinSchema = z.object({
+  retroId: retroIdSchema,
+  name: nameSchema,
+  /** Returned by a previous join; lets a participant come back as themselves. */
+  token: z.string().max(100).optional(),
+});
+export type JoinRequest = z.infer<typeof joinSchema>;
+
+export const addCardSchema = z.object({
+  id: z.uuid(),
+  columnId: columnIdSchema,
+  text: cardTextSchema,
+});
+export type AddCardRequest = z.infer<typeof addCardSchema>;
+
+export const editCardSchema = z.object({ id: z.uuid(), text: cardTextSchema });
+export type EditCardRequest = z.infer<typeof editCardSchema>;
+
+export const deleteCardSchema = z.object({ id: z.uuid() });
+export type DeleteCardRequest = z.infer<typeof deleteCardSchema>;
+
+export type ErrorCode = "invalid" | "not_found" | "forbidden" | "not_joined" | "internal";
+
+export type Result<T> = { ok: true; data: T } | { ok: false; error: ErrorCode };
+export type Ack<T> = (result: Result<T>) => void;
+
+export interface JoinResult {
+  token: string;
+  me: ParticipantView;
+  snapshot: RetroSnapshot;
+}
+
 export interface ServerToClientEvents {
   "server:hello": (payload: ServerHello) => void;
+  "card:upserted": (card: CardView) => void;
+  "card:deleted": (payload: { id: string }) => void;
+  "participants:changed": (participants: ParticipantView[]) => void;
 }
 
 export interface ClientToServerEvents {
   "client:ping": (ack: (pong: Pong) => void) => void;
+  "retro:join": (request: JoinRequest, ack: Ack<JoinResult>) => void;
+  "card:add": (request: AddCardRequest, ack: Ack<CardView>) => void;
+  "card:edit": (request: EditCardRequest, ack: Ack<CardView>) => void;
+  "card:delete": (request: DeleteCardRequest, ack: Ack<null>) => void;
 }
 
 export type HealthCheck = "ok" | "down";
