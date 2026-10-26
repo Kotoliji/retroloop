@@ -26,3 +26,7 @@ export const saveToken = (retroId: string, token: string) => write(`retroloop:to
 /** The facilitator key of a retro this browser created. */
 export const savedHostKey = (retroId: string) => read(`retroloop:host:${retroId}`) ?? undefined;
 export const saveHostKey = (retroId: string, key: string) => write(`retroloop:host:${retroId}`, key);
+
+/** The "owner/repo" last used for GitHub issue links. */
+export const savedGithubRepo = () => read("retroloop:github-repo") ?? "";
+export const saveGithubRepo = (repo: string) => write("retroloop:github-repo", repo);

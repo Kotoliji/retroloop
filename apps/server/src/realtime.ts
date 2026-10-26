@@ -1,8 +1,12 @@
 import {
+  addActionSchema,
   addCardSchema,
+  deleteActionSchema,
   deleteCardSchema,
+  editActionSchema,
   editCardSchema,
   emptySchema,
+  reviewActionSchema,
   focusSchema,
   groupCardSchema,
   handoverSchema,
@@ -25,7 +29,7 @@ import type { Server, Socket } from "socket.io";
 import type { z } from "zod";
 import { Presence } from "./retro/presence";
 import { STORE_FAILURES, type RetroStore, type StoreFailure } from "./retro/store";
-import { viewCards, viewMeta, type CardRow } from "./retro/views";
+import { viewAction, viewCards, viewMeta, type CardRow, type RetroRow } from "./retro/views";
 
 interface SocketData {
   retroId?: string;
@@ -89,6 +93,16 @@ export function registerRealtime(io: RealtimeServer, store: RetroStore, log: Fas
   async function broadcastMeta(retroId: string) {
     const retro = await store.getRetro(retroId);
     if (retro) io.to(room(retroId)).emit("retro:meta", viewMeta(retro));
+  }
+
+  async function actionsOf(retro: RetroRow) {
+    const [actions, stats] = await Promise.all([store.actions(retro), store.stats(retro)]);
+    return { actions: actions.map((a) => viewAction(a, retro.id)), stats };
+  }
+
+  async function broadcastActions(retroId: string) {
+    const retro = await store.getRetro(retroId);
+    if (retro) io.to(room(retroId)).emit("actions:changed", await actionsOf(retro));
   }
 
   /** Validates the payload, runs the handler and always answers the ack. */
@@ -173,6 +187,7 @@ export function registerRealtime(io: RealtimeServer, store: RetroStore, log: Fas
         const [board, participants] = await Promise.all([store.board(retroId), participantsOf(retroId)]);
         if (!board) throw new Failure("not_found");
         const meta = viewMeta(board.retro);
+        const { actions, stats } = await actionsOf(board.retro);
         socket.to(room(retroId)).emit("participants:changed", participants);
         // Claiming the facilitator role with the host key changes the meta for everyone.
         if (meta.facilitatorId === participant.id) socket.to(room(retroId)).emit("retro:meta", meta);
@@ -183,6 +198,8 @@ export function registerRealtime(io: RealtimeServer, store: RetroStore, log: Fas
             retro: meta,
             participants,
             cards: viewCards(board.cards, board.votes, participant.id, meta.stage),
+            actions,
+            stats,
           },
         };
       }),
@@ -257,6 +274,8 @@ export function registerRealtime(io: RealtimeServer, store: RetroStore, log: Fas
     );
 
     command("retro:stage", setStageSchema, async (retroId, { stage }) => {
+      const retro = await store.getRetro(retroId);
+      if (stage === "review" && !retro?.hasReview) throw new Failure("wrong_stage");
       await store.setStage(retroId, stage);
       return { cards: true }; // visibility and vote totals depend on the stage
     });
@@ -273,6 +292,38 @@ export function registerRealtime(io: RealtimeServer, store: RetroStore, log: Fas
       store.setTimer(retroId, new Date(Date.now() + seconds * 1000)),
     );
     command("timer:stop", emptySchema, (retroId) => store.setTimer(retroId, null));
+
+    socket.on(
+      "retro:next",
+      handle(socket, emptySchema, async () => {
+        const { retroId } = await facilitatorSession(socket);
+        const next = unwrap(await store.createNextRetro(retroId));
+        await broadcastMeta(retroId); // everyone gets the link to the next retro
+        return next;
+      }),
+    );
+
+    /** Registers an action-item change that anyone in the retro may make. */
+    function actionEvent<S extends z.ZodType>(
+      event: keyof ClientToServerEvents,
+      schema: S,
+      run: (retroId: string, input: z.infer<S>) => Promise<true | StoreFailure>,
+    ) {
+      socket.on(
+        event,
+        handle(socket, schema, async (input) => {
+          const { retroId } = session(socket);
+          unwrap(await run(retroId, input));
+          await broadcastActions(retroId);
+          return null;
+        }) as never,
+      );
+    }
+
+    actionEvent("action:add", addActionSchema, (retroId, req) => store.addAction(retroId, req));
+    actionEvent("action:edit", editActionSchema, (retroId, req) => store.editAction(retroId, req));
+    actionEvent("action:delete", deleteActionSchema, (retroId, { id }) => store.deleteAction(retroId, id));
+    actionEvent("action:review", reviewActionSchema, (retroId, req) => store.reviewAction(retroId, req));
 
     socket.on("disconnect", () => {
       leave(socket).catch((err) => log.error({ err }, "leave failed"));

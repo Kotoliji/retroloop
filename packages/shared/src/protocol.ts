@@ -3,13 +3,18 @@ import {
   cardTextSchema,
   columnIdSchema,
   nameSchema,
+  ACTION_STATUSES,
+  dueDateSchema,
   LIMITS,
   retroIdSchema,
   stageSchema,
+  type ActionItemView,
   type CardView,
+  type CreatedRetro,
   type ParticipantView,
   type RetroMeta,
   type RetroSnapshot,
+  type TeamStats,
 } from "./board";
 
 /**
@@ -73,6 +78,36 @@ export const focusSchema = z.object({ cardId: z.uuid().nullable() });
 export const handoverSchema = z.object({ participantId: z.uuid() });
 export const emptySchema = z.object({}).optional();
 
+const actionText = z.string().trim().min(1).max(LIMITS.actionLength);
+const ownerName = nameSchema;
+
+export const addActionSchema = z.object({
+  id: z.uuid(),
+  text: actionText,
+  ownerName,
+  dueDate: dueDateSchema,
+  sourceCardId: z.uuid().nullable().optional(),
+});
+export type AddActionRequest = z.infer<typeof addActionSchema>;
+
+export const editActionSchema = z.object({
+  id: z.uuid(),
+  text: actionText,
+  ownerName,
+  dueDate: dueDateSchema,
+});
+export type EditActionRequest = z.infer<typeof editActionSchema>;
+
+export const reviewActionSchema = z.object({
+  id: z.uuid(),
+  status: z.enum(ACTION_STATUSES),
+  /** A new due date when an open item is carried over. */
+  dueDate: dueDateSchema.optional(),
+});
+export type ReviewActionRequest = z.infer<typeof reviewActionSchema>;
+
+export const deleteActionSchema = z.object({ id: z.uuid() });
+
 export type ErrorCode =
   | "invalid"
   | "not_found"
@@ -80,6 +115,7 @@ export type ErrorCode =
   | "not_joined"
   | "wrong_stage"
   | "no_votes_left"
+  | "too_many_actions"
   | "internal";
 
 export type Result<T> = { ok: true; data: T } | { ok: false; error: ErrorCode };
@@ -100,6 +136,7 @@ export interface ServerToClientEvents {
   "retro:meta": (meta: RetroMeta) => void;
   /** Many cards changed at once (a stage change or a regroup): replace them all. */
   "retro:cards": (cards: CardView[]) => void;
+  "actions:changed": (payload: { actions: ActionItemView[]; stats: TeamStats }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -120,6 +157,12 @@ export interface ClientToServerEvents {
   "retro:handover": (request: { participantId: string }, ack: Ack<null>) => void;
   "timer:start": (request: { seconds: number }, ack: Ack<null>) => void;
   "timer:stop": (request: Record<string, never>, ack: Ack<null>) => void;
+  /** Creates the team's next retro; the caller becomes its facilitator. */
+  "retro:next": (request: Record<string, never>, ack: Ack<CreatedRetro>) => void;
+  "action:add": (request: AddActionRequest, ack: Ack<null>) => void;
+  "action:edit": (request: EditActionRequest, ack: Ack<null>) => void;
+  "action:delete": (request: { id: string }, ack: Ack<null>) => void;
+  "action:review": (request: ReviewActionRequest, ack: Ack<null>) => void;
 }
 
 export type HealthCheck = "ok" | "down";

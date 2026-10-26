@@ -1,13 +1,18 @@
-import type { CardView, ColumnId, RetroMeta, Stage } from "@retro/shared";
+import type { ActionItemView, ActionStatus, CardView, ColumnId, RetroMeta, Stage } from "@retro/shared";
 
 export interface RetroRow {
   id: string;
+  teamId: string;
+  number: number;
   title: string;
   stage: string;
+  hasReview: boolean;
+  nextRetroId: string | null;
   facilitatorId: string | null;
   votesPerPerson: number;
   timerEndsAt: Date | null;
   focusCardId: string | null;
+  team: { name: string };
 }
 
 export interface CardRow {
@@ -24,10 +29,27 @@ export interface VoteRow {
   participantId: string;
 }
 
+export interface ActionRow {
+  id: string;
+  retroId: string;
+  text: string;
+  ownerName: string;
+  dueDate: Date;
+  status: string;
+  sourceCardId: string | null;
+  reviewedInRetroId: string | null;
+  createdAt: Date;
+}
+
 export function viewMeta(retro: RetroRow): RetroMeta {
   return {
     id: retro.id,
     title: retro.title,
+    teamId: retro.teamId,
+    teamName: retro.team.name,
+    number: retro.number,
+    hasReview: retro.hasReview,
+    nextRetroId: retro.nextRetroId,
     stage: retro.stage as Stage,
     facilitatorId: retro.facilitatorId,
     votesPerPerson: retro.votesPerPerson,
@@ -35,6 +57,8 @@ export function viewMeta(retro: RetroRow): RetroMeta {
     focusCardId: retro.focusCardId,
   };
 }
+
+const VOTES_VISIBLE: readonly Stage[] = ["discuss", "done"];
 
 /**
  * The single place that decides what a participant may see. The author id is
@@ -59,7 +83,22 @@ export function viewCards(cards: CardRow[], votes: VoteRow[], viewerId: string, 
       groupId: card.groupId,
       createdAt: card.createdAt.toISOString(),
       myVotes: mine.get(card.id) ?? 0,
-      votes: stage === "discuss" ? (totals.get(card.id) ?? 0) : null,
+      votes: VOTES_VISIBLE.includes(stage) ? (totals.get(card.id) ?? 0) : null,
     };
   });
+}
+
+export function viewAction(action: ActionRow, retroId: string): ActionItemView {
+  return {
+    id: action.id,
+    text: action.text,
+    ownerName: action.ownerName,
+    // A DATE column comes back as midnight UTC; the calendar date is what matters.
+    dueDate: action.dueDate.toISOString().slice(0, 10),
+    status: action.status as ActionStatus,
+    sourceCardId: action.sourceCardId,
+    fromThisRetro: action.retroId === retroId,
+    reviewedHere: action.reviewedInRetroId === retroId,
+    createdAt: action.createdAt.toISOString(),
+  };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { COLUMNS } from "@retro/shared";
+import { COLUMNS, type CardView } from "@retro/shared";
 import { useEffect, useMemo, useRef } from "react";
 import { rankGroups } from "@/lib/board-state";
 import { useIsFacilitator, useRetroStore } from "@/lib/retro-store";
@@ -10,7 +10,12 @@ import { ACCENTS } from "./Column";
 const columnTitle = Object.fromEntries(COLUMNS.map((c) => [c.id, c.title]));
 
 /** Topics ranked by votes; the facilitator picks the one being discussed. */
-export function DiscussList({ actions }: { actions: RoomActions }) {
+interface Props {
+  actions: RoomActions;
+  onMakeAction(topic: CardView): void;
+}
+
+export function DiscussList({ actions, onMakeAction }: Props) {
   // Select the stable cards array and derive groups from it; a selector that
   // built new group objects would look like a change on every render.
   const cards = useRetroStore((s) => s.cards);
@@ -24,7 +29,7 @@ export function DiscussList({ actions }: { actions: RoomActions }) {
   }, [focusId]);
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-3 p-4 sm:p-6">
+    <section aria-label="Topics" className="flex flex-col gap-3">
       <ol className="flex flex-col gap-3">
         {groups.map(({ lead, members }, rank) => {
           const focused = lead.id === focusId;
@@ -62,6 +67,12 @@ export function DiscussList({ actions }: { actions: RoomActions }) {
                     {lead.votes ?? 0}
                     <span className="sr-only"> votes</span>
                   </span>
+                  <button
+                    onClick={() => onMakeAction(lead)}
+                    className="rounded-lg border border-zinc-300 px-2.5 py-1 text-xs font-medium whitespace-nowrap transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                  >
+                    + Action
+                  </button>
                   {isFacilitator && (
                     <button
                       onClick={() => void actions.facilitator.focus(focused ? null : lead.id)}
@@ -77,6 +88,6 @@ export function DiscussList({ actions }: { actions: RoomActions }) {
         })}
       </ol>
       {groups.length === 0 && <p className="text-center text-zinc-500">No cards were written in this retro.</p>}
-    </main>
+    </section>
   );
 }

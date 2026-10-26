@@ -29,7 +29,7 @@ describe("joining a retro", () => {
     const seenByAlice = next(alice, "participants:changed");
     const bobJoin = await join(bob, retro.id, "Bob");
 
-    expect(bobJoin.snapshot.retro).toMatchObject({ id: retro.id, title: "Sprint 7", stage: "write" });
+    expect(bobJoin.snapshot.retro).toMatchObject({ id: retro.id, teamName: "Sprint 7", number: 1, stage: "write" });
     expect(bobJoin.snapshot.participants.map((p) => [p.name, p.online])).toEqual([
       ["Alice", true],
       ["Bob", true],

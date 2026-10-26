@@ -18,7 +18,7 @@ completed in most teams, and existing tools stop at the board. See
 - [x] **Phase 0** — monorepo, realtime server with health checks, typed socket protocol, CI
 - [x] **Phase 1** — live board: create a retro, share the link, cards appear for everyone instantly
 - [x] **Phase 2** — retro flow: facilitator, anonymous writing → reveal and group → vote → discuss, timer
-- [ ] Phase 3 — action items with owner and due date, carry-over, export
+- [x] **Phase 3** — action items with owner and due date, review in the next retro, follow-through score, export
 - [ ] Phase 4 — public launch: landing page, i18n, analytics, end-of-retro survey
 - [ ] Phase 5+ — templates, reminders, scaling across instances, e2e tests, admin stats
 
@@ -83,7 +83,24 @@ within a second if one of them is down.
 | Write | Everyone adds cards | Other people's text is not sent to the browser at all — only a placeholder — so it can't be read in DevTools |
 | Group | Cards are revealed; drag a card onto a similar one to group them | Groups are one level deep; deleting a group's top card promotes the next one |
 | Vote | Everyone spends a limited number of votes on groups | The limit is checked in a transaction that locks the voter's row: 10 parallel votes with a limit of 3 store exactly 3. Totals stay hidden |
-| Discuss | Groups ranked by votes; the facilitator highlights the current topic | Vote totals are revealed only now |
+| Discuss | Groups ranked by votes; the facilitator highlights the current topic; the team agrees on action items | Vote totals are revealed only now. Every action item needs an owner and a due date, and there are at most three per retro — checked under a row lock, so parallel adds can't overshoot |
+| Wrap up | What was agreed, the team's follow-through score, exports, the link to the next retro | |
+
+## Follow-through: the part other retro tools skip
+
+A team's retros form a series. When the facilitator starts the next retro, it
+opens with a **review** of every action item still open from earlier ones: done,
+not yet (with a new due date), or dropped. Items that are not done keep coming
+back until they are; the review stage is skipped when nothing is open.
+
+The **follow-through score** — the share of action items from earlier retros that
+actually got done — is shown at the review and at the end of every retro. It is
+also the product's success metric: most teams finish under half of their retro
+action items (see [docs/RESEARCH.md](docs/RESEARCH.md)).
+
+Agreed items leave the tool the way teams already work: **Markdown** for a wiki
+or chat, **CSV** that Jira's importer maps without setup, a prefilled **GitHub
+issue** link, and an **.ics** calendar event on the due date for the owner.
 
 Whoever creates a retro gets a facilitator key (kept in their browser, stored as a
 hash); only the facilitator moves between stages, runs the timer and can hand the

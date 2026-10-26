@@ -51,7 +51,7 @@ export function buildApp({ webOrigin, probes, store, logger = true, probeTimeout
   app.post("/retros", async (req, reply) => {
     const body = createRetroSchema.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: "invalid" });
-    return reply.code(201).send(await store.createRetro(body.data.title));
+    return reply.code(201).send(await store.createRetro(body.data.teamName));
   });
 
   app.get<{ Params: { id: string } }>("/retros/:id", async (req, reply) => {

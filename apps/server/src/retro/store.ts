@@ -1,7 +1,18 @@
 import { createHash, randomBytes } from "node:crypto";
-import type { AddCardRequest, CreatedRetro, EditCardRequest, RetroSummary, Stage } from "@retro/shared";
+import {
+  LIMITS,
+  type AddActionRequest,
+  type AddCardRequest,
+  type CreatedRetro,
+  type EditActionRequest,
+  type EditCardRequest,
+  type ReviewActionRequest,
+  type RetroSummary,
+  type Stage,
+  type TeamStats,
+} from "@retro/shared";
 import type { Prisma } from "../db";
-import type { CardRow, RetroRow, VoteRow } from "./views";
+import type { ActionRow, CardRow, RetroRow, VoteRow } from "./views";
 
 const newRetroId = () => randomBytes(8).toString("base64url").slice(0, 10);
 const newSecret = () => randomBytes(24).toString("base64url");
@@ -10,19 +21,25 @@ const hash = (secret: string) => createHash("sha256").update(secret).digest("hex
 const isUniqueViolation = (err: unknown) =>
   typeof err === "object" && err !== null && "code" in err && err.code === "P2002";
 
-export type StoreFailure = "not_found" | "forbidden" | "wrong_stage" | "no_votes_left";
+export type StoreFailure = "not_found" | "forbidden" | "wrong_stage" | "no_votes_left" | "too_many_actions";
 export const STORE_FAILURES: ReadonlySet<string> = new Set<StoreFailure>([
   "not_found",
   "forbidden",
   "wrong_stage",
   "no_votes_left",
+  "too_many_actions",
 ]);
 
 const cardSelect = { id: true, columnId: true, text: true, authorId: true, groupId: true, createdAt: true } as const;
 const retroSelect = {
   id: true,
+  teamId: true,
+  number: true,
   title: true,
   stage: true,
+  hasReview: true,
+  nextRetroId: true,
+  team: { select: { name: true } },
   facilitatorId: true,
   votesPerPerson: true,
   timerEndsAt: true,
@@ -30,6 +47,10 @@ const retroSelect = {
 } as const;
 
 const EDITABLE: readonly Stage[] = ["write", "group"];
+const ACTION_STAGES: readonly Stage[] = ["discuss", "done"];
+
+/** A due date as stored in a DATE column: that calendar day at midnight UTC. */
+const toDate = (day: string) => new Date(`${day}T00:00:00Z`);
 
 export function createRetroStore(prisma: Prisma) {
   const getRetro = (id: string): Promise<RetroRow | null> =>
@@ -58,13 +79,61 @@ export function createRetroStore(prisma: Prisma) {
       return prisma.retro.findUnique({ where: { id }, select: { id: true, title: true } });
     },
 
-    async createRetro(title: string): Promise<CreatedRetro> {
+    /** Starts a new team with its first retro. */
+    async createRetro(teamName: string): Promise<CreatedRetro> {
       const hostKey = newSecret();
       const retro = await prisma.retro.create({
-        data: { id: newRetroId(), title, hostKeyHash: hash(hostKey) },
+        data: {
+          id: newRetroId(),
+          title: "Retro 1",
+          hostKeyHash: hash(hostKey),
+          team: { create: { id: newRetroId(), name: teamName } },
+        },
         select: { id: true, title: true },
       });
       return { ...retro, hostKey };
+    },
+
+    /**
+     * Creates the team's next retro, which opens with a review when earlier
+     * action items are still open. Asking again returns the same next retro
+     * with a new host key, so the facilitator can always get back in.
+     */
+    async createNextRetro(retroId: string): Promise<CreatedRetro | StoreFailure> {
+      const hostKey = newSecret();
+      return prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "Retro" WHERE id = ${retroId} FOR UPDATE`;
+        const current = await tx.retro.findUnique({ where: { id: retroId } });
+        if (!current) return "not_found" as const;
+
+        if (current.nextRetroId) {
+          const next = await tx.retro.update({
+            where: { id: current.nextRetroId },
+            data: { hostKeyHash: hash(hostKey) },
+            select: { id: true, title: true },
+          });
+          return { ...next, hostKey };
+        }
+
+        const last = await tx.retro.aggregate({ where: { teamId: current.teamId }, _max: { number: true } });
+        const number = (last._max.number ?? 0) + 1;
+        const open = await tx.actionItem.count({ where: { teamId: current.teamId, status: "open" } });
+        const next = await tx.retro.create({
+          data: {
+            id: newRetroId(),
+            teamId: current.teamId,
+            number,
+            title: `Retro ${number}`,
+            hostKeyHash: hash(hostKey),
+            hasReview: open > 0,
+            stage: open > 0 ? "review" : "write",
+            votesPerPerson: current.votesPerPerson,
+          },
+          select: { id: true, title: true },
+        });
+        await tx.retro.update({ where: { id: retroId }, data: { nextRetroId: next.id } });
+        return { ...next, hostKey };
+      });
     },
 
     /** Returns null when the retro does not exist. */
@@ -207,6 +276,102 @@ export function createRetroStore(prisma: Prisma) {
       const vote = await prisma.vote.findFirst({ where: { retroId, participantId, cardId } });
       if (vote) await prisma.vote.delete({ where: { id: vote.id } });
       return prisma.vote.count({ where: { participantId, cardId } });
+    },
+
+    /**
+     * Items this retro shows: the ones agreed in it, plus items from the team's
+     * earlier retros that are still open or were reviewed in this one.
+     */
+    async actions(retro: RetroRow): Promise<ActionRow[]> {
+      return prisma.actionItem.findMany({
+        where: {
+          OR: [
+            { retroId: retro.id },
+            {
+              teamId: retro.teamId,
+              retro: { number: { lt: retro.number } },
+              OR: [{ status: "open" }, { reviewedInRetroId: retro.id }],
+            },
+          ],
+        },
+        orderBy: { createdAt: "asc" },
+      });
+    },
+
+    /** How many items from the team's earlier retros got done. */
+    async stats(retro: RetroRow): Promise<TeamStats> {
+      const earlier = { teamId: retro.teamId, retro: { number: { lt: retro.number } } };
+      const [total, done] = await Promise.all([
+        prisma.actionItem.count({ where: earlier }),
+        prisma.actionItem.count({ where: { ...earlier, status: "done" } }),
+      ]);
+      return { done, total };
+    },
+
+    /**
+     * At most LIMITS.maxActionsPerRetro items per retro. The retro row is locked
+     * while counting, so parallel adds cannot overshoot the limit together.
+     */
+    async addAction(retroId: string, req: AddActionRequest): Promise<true | StoreFailure> {
+      return prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "Retro" WHERE id = ${retroId} FOR UPDATE`;
+        const retro = await tx.retro.findUnique({ where: { id: retroId } });
+        if (!retro) return "not_found" as const;
+        if (!ACTION_STAGES.includes(retro.stage as Stage)) return "wrong_stage" as const;
+
+        const existing = await tx.actionItem.findUnique({ where: { id: req.id } });
+        if (existing) return existing.retroId === retroId ? (true as const) : ("forbidden" as const);
+        if ((await tx.actionItem.count({ where: { retroId } })) >= LIMITS.maxActionsPerRetro) {
+          return "too_many_actions" as const;
+        }
+
+        const source = req.sourceCardId
+          ? await tx.card.findFirst({ where: { id: req.sourceCardId, retroId } })
+          : null;
+        await tx.actionItem.create({
+          data: {
+            id: req.id,
+            teamId: retro.teamId,
+            retroId,
+            sourceCardId: source?.id ?? null,
+            text: req.text,
+            ownerName: req.ownerName,
+            dueDate: toDate(req.dueDate),
+          },
+        });
+        return true as const;
+      });
+    },
+
+    async editAction(retroId: string, req: EditActionRequest): Promise<true | StoreFailure> {
+      if (!ACTION_STAGES.includes((await stageOf(retroId)) as Stage)) return "wrong_stage";
+      const { count } = await prisma.actionItem.updateMany({
+        where: { id: req.id, retroId },
+        data: { text: req.text, ownerName: req.ownerName, dueDate: toDate(req.dueDate) },
+      });
+      return count ? true : "not_found";
+    },
+
+    async deleteAction(retroId: string, id: string): Promise<true | StoreFailure> {
+      if (!ACTION_STAGES.includes((await stageOf(retroId)) as Stage)) return "wrong_stage";
+      const { count } = await prisma.actionItem.deleteMany({ where: { id, retroId } });
+      return count ? true : "not_found";
+    },
+
+    /** Marks an item from an earlier retro done, still open (maybe with a new date) or dropped. */
+    async reviewAction(retroId: string, req: ReviewActionRequest): Promise<true | StoreFailure> {
+      const retro = await getRetro(retroId);
+      if (!retro) return "not_found";
+      if (retro.stage !== "review") return "wrong_stage";
+      const { count } = await prisma.actionItem.updateMany({
+        where: { id: req.id, teamId: retro.teamId, retro: { number: { lt: retro.number } } },
+        data: {
+          status: req.status,
+          reviewedInRetroId: retroId,
+          ...(req.dueDate ? { dueDate: toDate(req.dueDate) } : {}),
+        },
+      });
+      return count ? true : "not_found";
     },
 
     async setStage(retroId: string, stage: Stage) {

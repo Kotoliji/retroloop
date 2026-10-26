@@ -12,12 +12,15 @@ export const columnIdSchema = z.enum(COLUMNS.map((c) => c.id) as [ColumnId, ...C
 
 /**
  * A retro moves through these stages in order; the facilitator can step back.
+ * - review:  what happened to the action items from earlier retros (skipped
+ *            when the team has none open)
  * - write:   everyone adds cards; other people's cards stay hidden
  * - group:   cards are revealed and similar ones are grouped together
  * - vote:    everyone spends a limited number of votes on groups
- * - discuss: groups sorted by votes, the facilitator walks through them
+ * - discuss: groups sorted by votes; action items are agreed here
+ * - done:    summary, export and the link to the team's next retro
  */
-export const STAGES = ["write", "group", "vote", "discuss"] as const;
+export const STAGES = ["review", "write", "group", "vote", "discuss", "done"] as const;
 export type Stage = (typeof STAGES)[number];
 export const stageSchema = z.enum(STAGES);
 
@@ -27,6 +30,9 @@ export const LIMITS = {
   cardLength: 500,
   maxVotesPerPerson: 10,
   maxTimerSeconds: 60 * 60,
+  actionLength: 200,
+  /** Few, owned, dated items get done; long lists don't. */
+  maxActionsPerRetro: 3,
 } as const;
 
 export const retroIdSchema = z.string().regex(/^[A-Za-z0-9_-]{10}$/);
@@ -34,7 +40,7 @@ export const cardTextSchema = z.string().trim().min(1).max(LIMITS.cardLength);
 export const nameSchema = z.string().trim().min(1).max(LIMITS.nameLength);
 
 export const createRetroSchema = z.object({
-  title: z.string().trim().min(1).max(LIMITS.titleLength),
+  teamName: z.string().trim().min(1).max(LIMITS.titleLength),
 });
 
 export interface RetroSummary {
@@ -49,6 +55,14 @@ export interface CreatedRetro extends RetroSummary {
 }
 
 export interface RetroMeta extends RetroSummary {
+  teamId: string;
+  teamName: string;
+  /** 1 for a team's first retro, 2 for the next one, and so on. */
+  number: number;
+  /** Whether this retro opened with a review of earlier action items. */
+  hasReview: boolean;
+  /** Set once the facilitator starts the team's next retro. */
+  nextRetroId: string | null;
   stage: Stage;
   facilitatorId: string | null;
   votesPerPerson: number;
@@ -84,8 +98,37 @@ export interface CardView {
   votes: number | null;
 }
 
+export const ACTION_STATUSES = ["open", "done", "dropped"] as const;
+export type ActionStatus = (typeof ACTION_STATUSES)[number];
+
+/** A YYYY-MM-DD calendar date, as picked in a date input. */
+export const dueDateSchema = z.iso.date();
+
+export interface ActionItemView {
+  id: string;
+  text: string;
+  ownerName: string;
+  dueDate: string;
+  status: ActionStatus;
+  /** The discussed topic this item came from, if any. */
+  sourceCardId: string | null;
+  /** False for items carried over from an earlier retro of the team. */
+  fromThisRetro: boolean;
+  /** An earlier item whose outcome was already decided in this retro's review. */
+  reviewedHere: boolean;
+  createdAt: string;
+}
+
+/** How the team did on items agreed in its earlier retros. */
+export interface TeamStats {
+  done: number;
+  total: number;
+}
+
 export interface RetroSnapshot {
   retro: RetroMeta;
   participants: ParticipantView[];
   cards: CardView[];
+  actions: ActionItemView[];
+  stats: TeamStats;
 }

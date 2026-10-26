@@ -27,7 +27,9 @@ export function RoomHeader({ actions }: { actions: RoomActions }) {
 
   return (
     <header className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-zinc-200 px-4 py-3 sm:px-6 dark:border-zinc-800">
-      <h1 className="text-lg font-semibold">{retro?.title}</h1>
+      <h1 className="text-lg font-semibold">
+        {retro?.teamName} <span className="font-normal text-zinc-500">· {retro?.title}</span>
+      </h1>
 
       <ul className="flex flex-1 flex-wrap items-center gap-1.5" aria-label={`${online.length} online`}>
         {online.map((p) => (

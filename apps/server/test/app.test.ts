@@ -32,18 +32,18 @@ describe("GET /health", () => {
 describe("retros over HTTP", () => {
   it("creates a retro and finds it by id", async () => {
     const app = buildTestApp();
-    const created = await app.inject({ method: "POST", url: "/retros", payload: { title: "Sprint 42" } });
+    const created = await app.inject({ method: "POST", url: "/retros", payload: { teamName: "Platform team" } });
     expect(created.statusCode).toBe(201);
     const { id } = created.json();
     expect(id).toMatch(/^[A-Za-z0-9_-]{10}$/);
 
     const found = await app.inject(`/retros/${id}`);
-    expect(found.json()).toEqual({ id, title: "Sprint 42" });
+    expect(found.json()).toEqual({ id, title: "Retro 1" });
   });
 
   it("rejects an empty title and answers 404 for an unknown retro", async () => {
     const app = buildTestApp();
-    expect((await app.inject({ method: "POST", url: "/retros", payload: { title: "  " } })).statusCode).toBe(400);
+    expect((await app.inject({ method: "POST", url: "/retros", payload: { teamName: "  " } })).statusCode).toBe(400);
     expect((await app.inject("/retros/nope000000")).statusCode).toBe(404);
   });
 });

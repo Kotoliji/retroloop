@@ -7,23 +7,29 @@ import type { RoomActions } from "@/lib/use-retro-room";
 import { Timer } from "./Timer";
 
 const LABELS: Record<Stage, string> = {
+  review: "Review",
   write: "Write",
   group: "Group",
   vote: "Vote",
   discuss: "Discuss",
+  done: "Wrap up",
 };
 
 const HINTS: Record<Stage, string> = {
+  review: "First, the action items from last time: done, not yet, or drop it?",
   write: "Write your cards. Nobody sees what you write until the facilitator reveals the board.",
   group: "Drag a card onto a similar one to group them.",
   vote: "Spend your votes on the topics you most want to talk about.",
-  discuss: "Talk the topics through, most votes first.",
+  discuss: "Talk the topics through, most votes first, and agree on up to three action items.",
+  done: "Here is what the team agreed. Export it, and start the next retro when it's time.",
 };
 
 const NEXT_LABEL: Partial<Record<Stage, string>> = {
+  review: "Start writing",
   write: "Reveal cards",
   group: "Start voting",
   vote: "Show results",
+  discuss: "Wrap up",
 };
 
 const TIMER_PRESETS = [3, 5, 10];
@@ -37,9 +43,11 @@ export function StageBar({ actions }: { actions: RoomActions }) {
   const isFacilitator = useIsFacilitator();
   if (!retro) return null;
 
-  const index = STAGES.indexOf(retro.stage);
-  const next = STAGES[index + 1];
-  const previous = STAGES[index - 1];
+  // The review stage exists only when earlier retros left open action items.
+  const stages = STAGES.filter((stage) => stage !== "review" || retro.hasReview);
+  const index = stages.indexOf(retro.stage);
+  const next = stages[index + 1];
+  const previous = stages[index - 1];
   const { facilitator } = actions;
 
   return (
@@ -49,7 +57,7 @@ export function StageBar({ actions }: { actions: RoomActions }) {
     >
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <ol className="flex items-center gap-1 text-sm">
-          {STAGES.map((stage, i) => (
+          {stages.map((stage, i) => (
             <li
               key={stage}
               aria-current={stage === retro.stage ? "step" : undefined}
@@ -110,7 +118,7 @@ export function StageBar({ actions }: { actions: RoomActions }) {
               </button>
             )}
 
-            {(retro.stage === "group" || retro.stage === "write") && (
+            {(retro.stage === "review" || retro.stage === "write" || retro.stage === "group") && (
               <label className="flex items-center gap-2">
                 Votes each
                 <select

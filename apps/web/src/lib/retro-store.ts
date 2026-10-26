@@ -1,4 +1,4 @@
-import type { CardView, JoinResult, ParticipantView, RetroMeta } from "@retro/shared";
+import type { ActionItemView, CardView, JoinResult, ParticipantView, RetroMeta, TeamStats } from "@retro/shared";
 import { create } from "zustand";
 import { removeCard, setMyVotes, upsertCard } from "./board-state";
 
@@ -10,6 +10,8 @@ interface RetroState {
   me?: ParticipantView;
   participants: ParticipantView[];
   cards: CardView[];
+  actions: ActionItemView[];
+  stats: TeamStats;
   /** Server clock minus local clock, in milliseconds. */
   clockOffset: number;
 
@@ -22,6 +24,7 @@ interface RetroState {
   remove(id: string): void;
   setMyVotes(id: string, myVotes: number): void;
   setParticipants(participants: ParticipantView[]): void;
+  setActions(payload: { actions: ActionItemView[]; stats: TeamStats }): void;
   setClockOffset(offset: number): void;
 }
 
@@ -29,9 +32,20 @@ export const useRetroStore = create<RetroState>()((set) => ({
   status: "connecting",
   participants: [],
   cards: [],
+  actions: [],
+  stats: { done: 0, total: 0 },
   clockOffset: 0,
 
-  reset: () => set({ status: "connecting", retro: undefined, me: undefined, participants: [], cards: [] }),
+  reset: () =>
+    set({
+      status: "connecting",
+      retro: undefined,
+      me: undefined,
+      participants: [],
+      cards: [],
+      actions: [],
+      stats: { done: 0, total: 0 },
+    }),
   setStatus: (status) => set({ status }),
   // A join (first or after a reconnect) replaces everything: the server snapshot
   // is the source of truth for whatever happened while this tab was away.
@@ -42,6 +56,8 @@ export const useRetroStore = create<RetroState>()((set) => ({
       retro: snapshot.retro,
       participants: snapshot.participants,
       cards: snapshot.cards,
+      actions: snapshot.actions,
+      stats: snapshot.stats,
     }),
   setMeta: (retro) => set({ retro }),
   setCards: (cards) => set({ cards }),
@@ -49,6 +65,7 @@ export const useRetroStore = create<RetroState>()((set) => ({
   remove: (id) => set((s) => ({ cards: removeCard(s.cards, id) })),
   setMyVotes: (id, myVotes) => set((s) => ({ cards: setMyVotes(s.cards, id, myVotes) })),
   setParticipants: (participants) => set({ participants }),
+  setActions: ({ actions, stats }) => set({ actions, stats }),
   setClockOffset: (clockOffset) => set({ clockOffset }),
 }));
 

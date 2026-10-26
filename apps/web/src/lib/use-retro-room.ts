@@ -1,6 +1,15 @@
 "use client";
 
-import { estimateClockOffset, type CardView, type ColumnId, type Result, type Stage } from "@retro/shared";
+import {
+  estimateClockOffset,
+  type AddActionRequest,
+  type CardView,
+  type ColumnId,
+  type EditActionRequest,
+  type Result,
+  type ReviewActionRequest,
+  type Stage,
+} from "@retro/shared";
 import { useCallback, useEffect, useRef } from "react";
 import { useRetroStore } from "./retro-store";
 import { createSocket, type RetroSocket } from "./socket";
@@ -58,6 +67,7 @@ export function useRetroRoom(retroId: string, name: string) {
     socket.on("retro:cards", store.setCards);
     socket.on("retro:meta", store.setMeta);
     socket.on("participants:changed", store.setParticipants);
+    socket.on("actions:changed", store.setActions);
 
     return () => {
       socket.disconnect();
@@ -193,9 +203,39 @@ export function useRetroRoom(retroId: string, name: string) {
       [send],
     ),
     stopTimer: useCallback(() => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("timer:stop", {})), [send]),
+    /** Creates the team's next retro; resolves with it, or null if that failed. */
+    nextRetro: useCallback(async () => {
+      try {
+        const result = await socketRef.current?.timeout(ACK_TIMEOUT_MS).emitWithAck("retro:next", {});
+        return result?.ok ? result.data : null;
+      } catch {
+        return null;
+      }
+    }, []),
   };
 
-  return { addCard, editCard, deleteCard, groupCard, ungroupCard, vote, facilitator };
+  // Action items: the server answers with the full list, so nothing to apply locally.
+  const actionItems = {
+    add: useCallback(
+      (request: AddActionRequest) => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("action:add", request)),
+      [send],
+    ),
+    edit: useCallback(
+      (request: EditActionRequest) => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("action:edit", request)),
+      [send],
+    ),
+    remove: useCallback(
+      (id: string) => send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("action:delete", { id })),
+      [send],
+    ),
+    review: useCallback(
+      (request: ReviewActionRequest) =>
+        send((s) => s.timeout(ACK_TIMEOUT_MS).emitWithAck("action:review", request)),
+      [send],
+    ),
+  };
+
+  return { addCard, editCard, deleteCard, groupCard, ungroupCard, vote, facilitator, actionItems };
 }
 
 export type RoomActions = ReturnType<typeof useRetroRoom>;
