@@ -12,9 +12,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
-  // A self-contained server for the Docker image; tracing starts at the
-  // monorepo root so the shared workspace package is included.
-  output: "standalone",
+  // A self-contained server for the Docker image (which sets NEXT_OUTPUT);
+  // tracing starts at the monorepo root so the shared package is included.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   outputFileTracingRoot: path.join(import.meta.dirname, "../.."),
   poweredByHeader: false,
   async headers() {

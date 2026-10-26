@@ -50,3 +50,44 @@ jobs:
       - uses: actions/checkout@v5
       - run: docker build -f apps/server/Dockerfile -t retroloop-server .
       - run: docker build -f apps/web/Dockerfile --build-arg NEXT_PUBLIC_SERVER_URL=https://api.example.com -t retroloop-web .
+
+  e2e:
+    # Real browsers against production builds of both apps.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: retro
+          POSTGRES_PASSWORD: retro
+          POSTGRES_DB: retro
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U retro -d retro"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+      redis:
+        image: redis:8-alpine
+        ports: ["6379:6379"]
+    env:
+      DATABASE_URL: postgresql://retro:retro@127.0.0.1:5432/retro
+      REDIS_URL: redis://127.0.0.1:6379
+      WEB_ORIGIN: http://localhost:3001
+      CREATE_LIMIT_PER_MINUTE: 100
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy
+        working-directory: apps/server
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report
+          retention-days: 7

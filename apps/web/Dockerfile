@@ -11,7 +11,7 @@ FROM deps AS build
 # NEXT_PUBLIC_* values are compiled into the browser bundle, so they are build arguments.
 ARG NEXT_PUBLIC_SERVER_URL
 ARG NEXT_PUBLIC_CONTACT_EMAIL
-ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_TELEMETRY_DISABLED=1 NEXT_OUTPUT=standalone
 COPY packages/shared packages/shared
 COPY apps/web apps/web
 RUN npm run build --workspace @retro/web

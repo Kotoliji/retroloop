@@ -21,7 +21,7 @@ completed in most teams, and existing tools stop at the board. See
 - [x] **Phase 3** — action items with owner and due date, review in the next retro, follow-through score, export
 - [x] **Phase 4** — launch-ready: landing page in English, Ukrainian, Russian and Portuguese, end-of-retro survey, anonymous analytics, privacy page and retention, rate limits, production Docker + Caddy
 - [x] **Phase 5** — retro formats (classic, Start-Stop-Continue, Mad-Sad-Glad, 4 Ls, Sailboat) and opt-in e-mail reminders for owners
-- [ ] Phase 6 — scaling across instances with Redis and a load test (done), end-to-end tests
+- [x] **Phase 6** — scaling across instances with Redis, a load test, end-to-end tests in real browsers
 - [ ] Phase 7 — admin stats from the survey and analytics
 
 ## Stack
@@ -145,7 +145,14 @@ npm run typecheck
 npm run lint
 npm test
 npm run build
+npm run test:e2e     # Playwright; reuses `npm run dev` if it is running
 ```
+
+End-to-end tests drive several real browsers through whole retros: anonymous
+writing (the hidden text is checked against the page HTML, not just the screen),
+drag-and-drop grouping, the vote limit, action items with CSV and calendar
+downloads, the next retro's review, the Ukrainian locale, the survey and deleting
+a retro.
 
 Server tests are integration tests: they start the real server and talk to it over
 Socket.IO, against a separate `retro_test` PostgreSQL database (created and migrated

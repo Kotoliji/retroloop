@@ -3,6 +3,7 @@
 import { LIMITS } from "@retro/shared";
 import { useTranslations } from "next-intl";
 import { saveName } from "@/lib/storage";
+import { useHydrated } from "@/lib/use-hydrated";
 
 /**
  * The input is uncontrolled and read on submit: on a slow phone people start
@@ -10,6 +11,7 @@ import { saveName } from "@/lib/storage";
  */
 export function NameForm({ onSubmit }: { onSubmit: (name: string) => void }) {
   const t = useTranslations("Join");
+  const hydrated = useHydrated();
 
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -36,7 +38,8 @@ export function NameForm({ onSubmit }: { onSubmit: (name: string) => void }) {
         </label>
         <button
           type="submit"
-          className="rounded-lg bg-zinc-900 px-5 py-3 font-medium text-white transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900"
+          disabled={!hydrated}
+          className="rounded-lg bg-zinc-900 px-5 py-3 font-medium text-white transition hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
         >
           {t("submit")}
         </button>

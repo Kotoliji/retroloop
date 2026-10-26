@@ -6,6 +6,7 @@ import { useId, useState } from "react";
 import { useRouter } from "@/i18n/navigation";
 import { SERVER_URL } from "@/lib/socket";
 import { saveHostKey } from "@/lib/storage";
+import { useHydrated } from "@/lib/use-hydrated";
 
 /**
  * Starts a new team with its first retro and takes the creator into it as
@@ -16,6 +17,7 @@ export function CreateRetroForm({ inverted = false }: { inverted?: boolean }) {
   const t = useTranslations("CreateRetro");
   const router = useRouter();
   const id = useId();
+  const hydrated = useHydrated();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
 
@@ -57,7 +59,7 @@ export function CreateRetroForm({ inverted = false }: { inverted?: boolean }) {
       />
       <button
         type="submit"
-        disabled={busy}
+        disabled={busy || !hydrated}
         className={`rounded-lg px-5 py-3 font-medium transition disabled:opacity-50 ${
           inverted
             ? "bg-white text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-700"

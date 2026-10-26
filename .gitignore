@@ -7,3 +7,5 @@ coverage/
 .env.local
 apps/server/src/generated/
 .env.prod
+playwright-report/
+test-results/
