@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { useState, useSyncExternalStore } from "react";
+import { Link } from "@/i18n/navigation";
 import { useRetroStore } from "@/lib/retro-store";
 import { savedName } from "@/lib/storage";
 import { useRetroRoom } from "@/lib/use-retro-room";
@@ -12,6 +13,15 @@ import { RoomHeader } from "./RoomHeader";
 import { StageBar } from "./StageBar";
 
 const noSubscribe = () => () => {};
+
+export function RoomLoading() {
+  const t = useTranslations("Room");
+  return (
+    <main className="flex flex-1 items-center justify-center text-zinc-500" role="status">
+      {t("loading")}
+    </main>
+  );
+}
 
 export function RetroRoom() {
   const { retroId } = useParams<{ retroId: string }>();
@@ -25,6 +35,7 @@ export function RetroRoom() {
 }
 
 function JoinedRoom({ retroId, name }: { retroId: string; name: string }) {
+  const t = useTranslations("Room");
   const actions = useRetroRoom(retroId, name);
   const status = useRetroStore((s) => s.status);
   const retro = useRetroStore((s) => s.retro);
@@ -32,10 +43,10 @@ function JoinedRoom({ retroId, name }: { retroId: string; name: string }) {
   if (status === "not_found") {
     return (
       <main className="mx-auto flex max-w-md flex-1 flex-col justify-center gap-4 px-6 text-center">
-        <h1 className="text-2xl font-semibold">This retro does not exist</h1>
-        <p className="text-zinc-600 dark:text-zinc-400">Check the link, or start a new one.</p>
+        <h1 className="text-2xl font-semibold">{t("notFoundTitle")}</h1>
+        <p className="text-zinc-600 dark:text-zinc-400">{t("notFoundBody")}</p>
         <Link href="/" className="font-medium underline underline-offset-4">
-          Start a retro
+          {t("startNew")}
         </Link>
       </main>
     );
@@ -44,7 +55,7 @@ function JoinedRoom({ retroId, name }: { retroId: string; name: string }) {
   if (!retro) {
     return (
       <main className="flex flex-1 items-center justify-center text-zinc-500" role="status">
-        {status === "offline" ? "Can't reach the server — retrying…" : "Joining the retro…"}
+        {status === "offline" ? t("offline") : t("joining")}
       </main>
     );
   }

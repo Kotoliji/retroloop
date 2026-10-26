@@ -1,36 +1,11 @@
 "use client";
 
-import { LIMITS, STAGES, type Stage } from "@retro/shared";
+import { LIMITS, STAGES } from "@retro/shared";
+import { useTranslations } from "next-intl";
 import { votesUsed } from "@/lib/board-state";
 import { useIsFacilitator, useRetroStore } from "@/lib/retro-store";
 import type { RoomActions } from "@/lib/use-retro-room";
 import { Timer } from "./Timer";
-
-const LABELS: Record<Stage, string> = {
-  review: "Review",
-  write: "Write",
-  group: "Group",
-  vote: "Vote",
-  discuss: "Discuss",
-  done: "Wrap up",
-};
-
-const HINTS: Record<Stage, string> = {
-  review: "First, the action items from last time: done, not yet, or drop it?",
-  write: "Write your cards. Nobody sees what you write until the facilitator reveals the board.",
-  group: "Drag a card onto a similar one to group them.",
-  vote: "Spend your votes on the topics you most want to talk about.",
-  discuss: "Talk the topics through, most votes first, and agree on up to three action items.",
-  done: "Here is what the team agreed. Export it, and start the next retro when it's time.",
-};
-
-const NEXT_LABEL: Partial<Record<Stage, string>> = {
-  review: "Start writing",
-  write: "Reveal cards",
-  group: "Start voting",
-  vote: "Show results",
-  discuss: "Wrap up",
-};
 
 const TIMER_PRESETS = [3, 5, 10];
 
@@ -38,6 +13,8 @@ const button =
   "rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-100 disabled:opacity-40 dark:border-zinc-700 dark:hover:bg-zinc-800";
 
 export function StageBar({ actions }: { actions: RoomActions }) {
+  const t = useTranslations("Stage");
+  const tc = useTranslations("Common");
   const retro = useRetroStore((s) => s.retro);
   const used = useRetroStore((s) => votesUsed(s.cards));
   const isFacilitator = useIsFacilitator();
@@ -52,7 +29,7 @@ export function StageBar({ actions }: { actions: RoomActions }) {
 
   return (
     <section
-      aria-label="Retro progress"
+      aria-label={t("progress")}
       className="flex flex-col gap-3 border-b border-zinc-200 px-4 py-3 sm:px-6 dark:border-zinc-800"
     >
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -67,8 +44,8 @@ export function StageBar({ actions }: { actions: RoomActions }) {
                   : "text-zinc-500"
               }`}
             >
-              {i < index && <span aria-label="done">✓ </span>}
-              {LABELS[stage]}
+              {i < index && <span aria-label={t("done")}>✓ </span>}
+              {t(`labels.${stage}`)}
             </li>
           ))}
         </ol>
@@ -77,7 +54,7 @@ export function StageBar({ actions }: { actions: RoomActions }) {
 
         {retro.stage === "vote" && (
           <p className="text-sm font-medium" aria-live="polite">
-            {retro.votesPerPerson - used} of {retro.votesPerPerson} votes left
+            {t("votesLeft", { left: retro.votesPerPerson - used, total: retro.votesPerPerson })}
           </p>
         )}
 
@@ -85,7 +62,7 @@ export function StageBar({ actions }: { actions: RoomActions }) {
           <div className="ml-auto flex flex-wrap items-center gap-2">
             {previous && (
               <button className={button} onClick={() => void facilitator.setStage(previous)}>
-                Back
+                {tc("back")}
               </button>
             )}
             {next && (
@@ -93,7 +70,7 @@ export function StageBar({ actions }: { actions: RoomActions }) {
                 className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900"
                 onClick={() => void facilitator.setStage(next)}
               >
-                {NEXT_LABEL[retro.stage]}
+                {retro.stage !== "done" && t(`next.${retro.stage}`)}
               </button>
             )}
           </div>
@@ -101,26 +78,26 @@ export function StageBar({ actions }: { actions: RoomActions }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-zinc-600 dark:text-zinc-400">
-        <p>{HINTS[retro.stage]}</p>
+        <p>{t(`hints.${retro.stage}`)}</p>
 
         {isFacilitator && (
           <div className="ml-auto flex flex-wrap items-center gap-2">
-            <span className="sr-only">Timer</span>
+            <span className="sr-only">{t("timer")}</span>
             {retro.timerEndsAt === null ? (
               TIMER_PRESETS.map((minutes) => (
                 <button key={minutes} className={button} onClick={() => void facilitator.startTimer(minutes * 60)}>
-                  {minutes} min
+                  {t("minutes", { count: minutes })}
                 </button>
               ))
             ) : (
               <button className={button} onClick={() => void facilitator.stopTimer()}>
-                Stop timer
+                {t("stopTimer")}
               </button>
             )}
 
             {(retro.stage === "review" || retro.stage === "write" || retro.stage === "group") && (
               <label className="flex items-center gap-2">
-                Votes each
+                {t("votesEach")}
                 <select
                   value={retro.votesPerPerson}
                   onChange={(e) => void facilitator.setVotesPerPerson(Number(e.target.value))}

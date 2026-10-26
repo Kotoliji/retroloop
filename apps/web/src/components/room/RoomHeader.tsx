@@ -1,10 +1,13 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useIsFacilitator, useRetroStore } from "@/lib/retro-store";
 import type { RoomActions } from "@/lib/use-retro-room";
 
 export function RoomHeader({ actions }: { actions: RoomActions }) {
+  const t = useTranslations("Room");
   const retro = useRetroStore((s) => s.retro);
   const status = useRetroStore((s) => s.status);
   const participants = useRetroStore((s) => s.participants);
@@ -28,10 +31,11 @@ export function RoomHeader({ actions }: { actions: RoomActions }) {
   return (
     <header className="flex flex-wrap items-center gap-x-6 gap-y-3 border-b border-zinc-200 px-4 py-3 sm:px-6 dark:border-zinc-800">
       <h1 className="text-lg font-semibold">
-        {retro?.teamName} <span className="font-normal text-zinc-500">· {retro?.title}</span>
+        {retro?.teamName}{" "}
+        <span className="font-normal text-zinc-500">· {t("retroNumber", { number: retro?.number ?? 1 })}</span>
       </h1>
 
-      <ul className="flex flex-1 flex-wrap items-center gap-1.5" aria-label={`${online.length} online`}>
+      <ul className="flex flex-1 flex-wrap items-center gap-1.5" aria-label={t("online", { count: online.length })}>
         {online.map((p) => (
           <li
             key={p.id}
@@ -43,20 +47,20 @@ export function RoomHeader({ actions }: { actions: RoomActions }) {
             }`}
           >
             {p.id === facilitatorId && (
-              <span title="Facilitator" aria-label="facilitator" className="mr-1">
+              <span title={t("facilitator")} aria-label={t("facilitator")} className="mr-1">
                 ★
               </span>
             )}
             {p.name}
-            {p.id === me?.id && <span className="sr-only"> (you)</span>}
+            {p.id === me?.id && <span className="sr-only"> {t("you")}</span>}
             {isFacilitator && p.id !== me?.id && (
               <button
                 onClick={() => {
-                  if (window.confirm(`Make ${p.name} the facilitator?`)) void actions.facilitator.handover(p.id);
+                  if (window.confirm(t("confirmHandover", { name: p.name }))) void actions.facilitator.handover(p.id);
                 }}
                 className="ml-1.5 underline-offset-2 hover:underline"
               >
-                make facilitator
+                {t("makeFacilitator")}
               </button>
             )}
           </li>
@@ -65,15 +69,17 @@ export function RoomHeader({ actions }: { actions: RoomActions }) {
 
       {status !== "joined" && (
         <p role="status" className="text-sm text-amber-600 dark:text-amber-400">
-          Reconnecting…
+          {t("reconnecting")}
         </p>
       )}
+
+      <LanguageSwitcher />
 
       <button
         onClick={copyLink}
         className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
       >
-        {copied ? "Link copied" : "Copy invite link"}
+        {copied ? t("linkCopied") : t("copyLink")}
       </button>
     </header>
   );

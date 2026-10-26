@@ -1,21 +1,30 @@
 "use client";
 
 import { LIMITS, type CreatedRetro } from "@retro/shared";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { useId, useState } from "react";
+import { useRouter } from "@/i18n/navigation";
 import { SERVER_URL } from "@/lib/socket";
 import { saveHostKey } from "@/lib/storage";
 
-export function CreateRetroForm() {
+/**
+ * Starts a new team with its first retro and takes the creator into it as
+ * facilitator. The input is uncontrolled and read on submit, so text typed
+ * before the static page hydrates is not lost.
+ */
+export function CreateRetroForm({ inverted = false }: { inverted?: boolean }) {
+  const t = useTranslations("CreateRetro");
   const router = useRouter();
-  const [teamName, setTeamName] = useState("");
+  const id = useId();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState(false);
 
-  async function submit(event: React.FormEvent) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const teamName = String(new FormData(event.currentTarget).get("teamName") ?? "").trim();
+    if (!teamName) return;
     setBusy(true);
-    setError(null);
+    setError(false);
     try {
       const res = await fetch(`${SERVER_URL}/retros`, {
         method: "POST",
@@ -27,35 +36,39 @@ export function CreateRetroForm() {
       saveHostKey(retro.id, retro.hostKey);
       router.push(`/r/${retro.id}`);
     } catch {
-      setError("Could not create the retro. Is the server running?");
+      setError(true);
       setBusy(false);
     }
   }
 
   return (
-    <form onSubmit={submit} className="flex w-full max-w-lg flex-col gap-3 sm:flex-row">
-      <label htmlFor="team-name" className="sr-only">
-        Team name
+    <form onSubmit={submit} className="flex w-full max-w-lg flex-col gap-3 sm:flex-row sm:flex-wrap">
+      <label htmlFor={id} className="sr-only">
+        {t("teamName")}
       </label>
       <input
-        id="team-name"
-        value={teamName}
-        onChange={(e) => setTeamName(e.target.value)}
-        placeholder="Your team's name"
+        id={id}
+        name="teamName"
+        pattern=".*\S.*"
+        placeholder={t("placeholder")}
         maxLength={LIMITS.titleLength}
         required
-        className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-base outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-300"
+        className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-3 text-base text-zinc-900 outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:border-zinc-300"
       />
       <button
         type="submit"
-        disabled={busy || !teamName.trim()}
-        className="rounded-lg bg-zinc-900 px-5 py-3 font-medium text-white transition hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        disabled={busy}
+        className={`rounded-lg px-5 py-3 font-medium transition disabled:opacity-50 ${
+          inverted
+            ? "bg-white text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-900 dark:text-white dark:hover:bg-zinc-700"
+            : "bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        }`}
       >
-        {busy ? "Creating…" : "Start a retro"}
+        {busy ? t("creating") : t("submit")}
       </button>
       {error && (
         <p role="alert" className="text-sm text-red-600 sm:basis-full">
-          {error}
+          {t("error")}
         </p>
       )}
     </form>

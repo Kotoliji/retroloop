@@ -1,6 +1,7 @@
 "use client";
 
 import { LIMITS, type ActionItemView, type CardView } from "@retro/shared";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { formatDay } from "@/lib/dates";
 import { useRetroStore } from "@/lib/retro-store";
@@ -15,6 +16,7 @@ interface Props {
 
 /** The action items agreed in this retro, next to the discussion. */
 export function ActionPanel({ actions, source, onClearSource }: Props) {
+  const t = useTranslations("Actions");
   const all = useRetroStore((s) => s.actions);
   const items = useMemo(() => all.filter((a) => a.fromThisRetro), [all]);
   const full = items.length >= LIMITS.maxActionsPerRetro;
@@ -26,15 +28,12 @@ export function ActionPanel({ actions, source, onClearSource }: Props) {
     >
       <div>
         <h2 id="actions-title" className="flex items-baseline justify-between font-semibold">
-          Action items
+          {t("title")}
           <span className="text-sm font-normal text-zinc-500">
-            {items.length} of {LIMITS.maxActionsPerRetro}
+            {t("count", { count: items.length, max: LIMITS.maxActionsPerRetro })}
           </span>
         </h2>
-        <p className="mt-1 text-xs text-zinc-500">
-          Each one needs an owner and a due date. Three at most: a few owned items get done, long lists
-          don&apos;t.
-        </p>
+        <p className="mt-1 text-xs text-zinc-500">{t("rule")}</p>
       </div>
 
       <ul className="flex flex-col gap-2">
@@ -44,10 +43,10 @@ export function ActionPanel({ actions, source, onClearSource }: Props) {
       </ul>
 
       {full ? (
-        <p className="text-sm text-zinc-500">That&apos;s the limit for this retro.</p>
+        <p className="text-sm text-zinc-500">{t("full")}</p>
       ) : (
         <ActionForm
-          submitLabel="Add action item"
+          submitLabel={t("add")}
           source={source?.text ? { text: source.text, onClear: onClearSource } : undefined}
           onSubmit={async (draft) => {
             const saved = await actions.actionItems.add({
@@ -65,6 +64,8 @@ export function ActionPanel({ actions, source, onClearSource }: Props) {
 }
 
 function ActionRow({ item, actions }: { item: ActionItemView; actions: RoomActions }) {
+  const tc = useTranslations("Common");
+  const locale = useLocale();
   const [editing, setEditing] = useState(false);
 
   if (editing) {
@@ -72,7 +73,7 @@ function ActionRow({ item, actions }: { item: ActionItemView; actions: RoomActio
       <li className="rounded-lg border border-zinc-900 bg-white p-3 dark:border-zinc-300 dark:bg-zinc-900">
         <ActionForm
           initial={item}
-          submitLabel="Save"
+          submitLabel={tc("save")}
           onCancel={() => setEditing(false)}
           onSubmit={async (draft) => {
             const saved = await actions.actionItems.edit({ id: item.id, ...draft });
@@ -88,15 +89,15 @@ function ActionRow({ item, actions }: { item: ActionItemView; actions: RoomActio
     <li className="rounded-lg border border-zinc-200 bg-white p-3 text-sm shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <p className="break-words">{item.text}</p>
       <p className="mt-1 text-xs text-zinc-500">
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">{item.ownerName}</span> · due{" "}
-        {formatDay(item.dueDate)}
+        <span className="font-medium text-zinc-700 dark:text-zinc-300">{item.ownerName}</span> ·{" "}
+        {tc("due", { date: formatDay(item.dueDate, locale) })}
       </p>
       <div className="mt-2 flex gap-3 text-xs text-zinc-500">
         <button onClick={() => setEditing(true)} className="font-medium hover:text-zinc-900 dark:hover:text-zinc-100">
-          Edit
+          {tc("edit")}
         </button>
         <button onClick={() => void actions.actionItems.remove(item.id)} className="font-medium hover:text-red-600">
-          Remove
+          {tc("remove")}
         </button>
       </div>
     </li>

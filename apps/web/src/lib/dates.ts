@@ -10,8 +10,8 @@ export function addDays(day: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
-export function formatDay(day: string) {
-  return new Date(`${day}T00:00:00Z`).toLocaleDateString(undefined, {
+export function formatDay(day: string, locale: string) {
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
     timeZone: "UTC",

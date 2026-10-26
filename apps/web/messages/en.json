@@ -1,0 +1,202 @@
+{
+  "Meta": {
+    "title": "Retroloop — sprint retros where action items get done",
+    "description": "Run your sprint retrospective in the browser and make sure the action items actually get done. Free, no sign-up for anyone."
+  },
+  "Common": {
+    "language": "Language",
+    "back": "Back",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "remove": "Remove",
+    "due": "due {date}",
+    "privacy": "Privacy"
+  },
+  "Landing": {
+    "eyebrow": "Free sprint retrospectives",
+    "headline": "Retros that actually change something",
+    "lead": "Run your retrospective in the browser — and make sure the action items get done. Nobody needs an account: start a board, share the link.",
+    "problemTitle": "The same problems, sprint after sprint",
+    "problem": "Most teams finish less than half of the action items from their retros. The board is the easy part; what happens after it is where retros fail. Retroloop is built around that part.",
+    "howTitle": "How a retro runs",
+    "steps": {
+      "write": {
+        "title": "Write, anonymously",
+        "body": "Everyone adds cards. Other people's cards stay on the server until the facilitator reveals them — not just blurred on screen."
+      },
+      "group": {
+        "title": "Group and vote",
+        "body": "Drag similar cards together, then spend a limited number of votes on what matters most."
+      },
+      "discuss": {
+        "title": "Agree on up to three actions",
+        "body": "Each action item needs an owner and a due date. A few owned items get done; long lists don't."
+      },
+      "review": {
+        "title": "Check them next time",
+        "body": "The next retro opens with last time's items — done, not yet, or dropped — and your team's follow-through score."
+      }
+    },
+    "featuresTitle": "Made for real teams",
+    "features": {
+      "noSignup": "No sign-up for anyone, including the facilitator",
+      "realtime": "Live for everyone: cards, votes and the timer stay in sync",
+      "exports": "Export to Jira (CSV), GitHub issues, Markdown and calendar events",
+      "mobile": "Works on a phone, for people joining from anywhere",
+      "privacy": "No tracking cookies and no ads; hosted in the EU"
+    },
+    "ctaTitle": "Start your team's first retro",
+    "ctaBody": "It takes ten seconds. Share the link, and your team is in."
+  },
+  "CreateRetro": {
+    "teamName": "Team name",
+    "placeholder": "Your team's name",
+    "submit": "Start a retro",
+    "creating": "Creating…",
+    "error": "Could not create the retro. Please try again."
+  },
+  "Room": {
+    "loading": "Loading the retro…",
+    "joining": "Joining the retro…",
+    "offline": "Can't reach the server — retrying…",
+    "notFoundTitle": "This retro does not exist",
+    "notFoundBody": "Check the link, or start a new one.",
+    "startNew": "Start a retro",
+    "reconnecting": "Reconnecting…",
+    "copyLink": "Copy invite link",
+    "linkCopied": "Link copied",
+    "online": "{count} online",
+    "you": "(you)",
+    "facilitator": "facilitator",
+    "makeFacilitator": "make facilitator",
+    "confirmHandover": "Make {name} the facilitator?",
+    "retroNumber": "Retro {number}"
+  },
+  "Join": {
+    "title": "Join the retro",
+    "nameLabel": "Your name, as the team will see it",
+    "submit": "Join"
+  },
+  "Stage": {
+    "progress": "Retro progress",
+    "done": "done",
+    "labels": {
+      "review": "Review",
+      "write": "Write",
+      "group": "Group",
+      "vote": "Vote",
+      "discuss": "Discuss",
+      "done": "Wrap up"
+    },
+    "hints": {
+      "review": "First, the action items from last time: done, not yet, or drop it?",
+      "write": "Write your cards. Nobody sees what you write until the facilitator reveals the board.",
+      "group": "Drag a card onto a similar one to group them.",
+      "vote": "Spend your votes on the topics you most want to talk about.",
+      "discuss": "Talk the topics through, most votes first, and agree on up to three action items.",
+      "done": "Here is what the team agreed. Export it, and start the next retro when it's time."
+    },
+    "next": {
+      "review": "Start writing",
+      "write": "Reveal cards",
+      "group": "Start voting",
+      "vote": "Show results",
+      "discuss": "Wrap up"
+    },
+    "votesLeft": "{left} of {total} votes left",
+    "timer": "Timer",
+    "minutes": "{count} min",
+    "stopTimer": "Stop timer",
+    "votesEach": "Votes each",
+    "timeLeft": "Time left",
+    "timesUp": "Time's up"
+  },
+  "Board": {
+    "columns": {
+      "went-well": "Went well",
+      "to-improve": "To improve",
+      "try-next": "Try next"
+    },
+    "addCard": "Add a card to {column}",
+    "addPlaceholder": "Add a card — Enter to post",
+    "hiddenCard": "A hidden card from a teammate",
+    "editCard": "Edit card",
+    "yourCard": "Your card",
+    "ungroup": "Ungroup",
+    "groupedCards": "Grouped cards",
+    "draggable": "draggable card",
+    "yourVotes": "Your votes: {count}",
+    "voteFor": "Vote for {topic}",
+    "unvote": "Remove a vote from {topic}",
+    "thisTopic": "this topic"
+  },
+  "Discuss": {
+    "topics": "Topics",
+    "now": "Discussing now",
+    "votes": "{count, plural, one {# vote} other {# votes}}",
+    "makeAction": "+ Action",
+    "focus": "Discuss",
+    "unfocus": "Done",
+    "empty": "No cards were written in this retro."
+  },
+  "Actions": {
+    "title": "Action items",
+    "count": "{count} of {max}",
+    "rule": "Each one needs an owner and a due date. Three at most: a few owned items get done, long lists don't.",
+    "full": "That's the limit for this retro.",
+    "add": "Add action item",
+    "fromTopic": "From topic:",
+    "unlink": "Unlink the topic",
+    "whatLabel": "What will be done",
+    "whatPlaceholder": "What exactly will be done?",
+    "owner": "Owner",
+    "ownerPlaceholder": "Who does it",
+    "dueLabel": "Due"
+  },
+  "Score": {
+    "title": "Follow-through",
+    "summary": "{done} of {total} action items from earlier retros done",
+    "first": "This is the team's first retro — the follow-through score starts with the next one.",
+    "none": "No action items were agreed in earlier retros yet."
+  },
+  "Review": {
+    "outcome": "Outcome of {text}",
+    "done": "Done",
+    "notYet": "Not yet",
+    "drop": "Drop it",
+    "overdue": "overdue",
+    "newDate": "New due date"
+  },
+  "Summary": {
+    "agreedTitle": "What {team} agreed to do",
+    "noneAgreed": "No action items were agreed in this retro.",
+    "export": "Export",
+    "copyMarkdown": "Copy as Markdown",
+    "copied": "Copied",
+    "jiraCsv": "Download CSV for Jira",
+    "githubRepo": "GitHub repository for issue links",
+    "calendar": "Add to calendar",
+    "calendarLabel": "Add \"{text}\" to calendar",
+    "githubIssue": "Open GitHub issue",
+    "githubIssueLabel": "Open a GitHub issue for \"{text}\"",
+    "startNext": "Start the next retro",
+    "goToNext": "Go to the next retro",
+    "joinNext": "Join the next retro",
+    "waitNext": "The facilitator starts the next retro when it's time; it will open with these items."
+  },
+  "Export": {
+    "actionItems": "Action items",
+    "noneAgreed": "None agreed.",
+    "topics": "Topics",
+    "noCards": "No cards.",
+    "earlier": "Earlier action items",
+    "due": "due {date}",
+    "votes": "{count, plural, one {# vote} other {# votes}}",
+    "owner": "Owner: {name}",
+    "agreedIn": "Agreed in {retro}.",
+    "calendarTitle": "Due: {text}",
+    "retroTitle": "Retro {number}"
+  }
+}

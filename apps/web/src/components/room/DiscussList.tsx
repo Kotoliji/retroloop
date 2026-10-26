@@ -1,13 +1,12 @@
 "use client";
 
-import { COLUMNS, type CardView } from "@retro/shared";
+import type { CardView } from "@retro/shared";
+import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef } from "react";
 import { rankGroups } from "@/lib/board-state";
 import { useIsFacilitator, useRetroStore } from "@/lib/retro-store";
 import type { RoomActions } from "@/lib/use-retro-room";
 import { ACCENTS } from "./Column";
-
-const columnTitle = Object.fromEntries(COLUMNS.map((c) => [c.id, c.title]));
 
 /** Topics ranked by votes; the facilitator picks the one being discussed. */
 interface Props {
@@ -16,6 +15,8 @@ interface Props {
 }
 
 export function DiscussList({ actions, onMakeAction }: Props) {
+  const t = useTranslations("Discuss");
+  const tb = useTranslations("Board");
   // Select the stable cards array and derive groups from it; a selector that
   // built new group objects would look like a change on every render.
   const cards = useRetroStore((s) => s.cards);
@@ -29,7 +30,7 @@ export function DiscussList({ actions, onMakeAction }: Props) {
   }, [focusId]);
 
   return (
-    <section aria-label="Topics" className="flex flex-col gap-3">
+    <section aria-label={t("topics")} className="flex flex-col gap-3">
       <ol className="flex flex-col gap-3">
         {groups.map(({ lead, members }, rank) => {
           const focused = lead.id === focusId;
@@ -47,7 +48,7 @@ export function DiscussList({ actions, onMakeAction }: Props) {
                 <div className="flex-1">
                   {focused && (
                     <p className="mb-1 text-xs font-semibold tracking-wide text-sky-600 uppercase dark:text-sky-400">
-                      Discussing now
+                      {t("now")}
                     </p>
                   )}
                   <p className="break-words whitespace-pre-wrap">{lead.text}</p>
@@ -60,25 +61,25 @@ export function DiscussList({ actions, onMakeAction }: Props) {
                       ))}
                     </ul>
                   )}
-                  <p className="mt-2 text-xs text-zinc-500">{columnTitle[lead.columnId]}</p>
+                  <p className="mt-2 text-xs text-zinc-500">{tb(`columns.${lead.columnId}`)}</p>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <span className="text-lg font-semibold tabular-nums">
-                    {lead.votes ?? 0}
-                    <span className="sr-only"> votes</span>
+                    <span aria-hidden>{lead.votes ?? 0}</span>
+                    <span className="sr-only">{t("votes", { count: lead.votes ?? 0 })}</span>
                   </span>
                   <button
                     onClick={() => onMakeAction(lead)}
                     className="rounded-lg border border-zinc-300 px-2.5 py-1 text-xs font-medium whitespace-nowrap transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
                   >
-                    + Action
+                    {t("makeAction")}
                   </button>
                   {isFacilitator && (
                     <button
                       onClick={() => void actions.facilitator.focus(focused ? null : lead.id)}
                       className="rounded-lg border border-zinc-300 px-2.5 py-1 text-xs font-medium transition hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
                     >
-                      {focused ? "Done" : "Discuss"}
+                      {focused ? t("unfocus") : t("focus")}
                     </button>
                   )}
                 </div>
@@ -87,7 +88,7 @@ export function DiscussList({ actions, onMakeAction }: Props) {
           );
         })}
       </ol>
-      {groups.length === 0 && <p className="text-center text-zinc-500">No cards were written in this retro.</p>}
+      {groups.length === 0 && <p className="text-center text-zinc-500">{t("empty")}</p>}
     </section>
   );
 }

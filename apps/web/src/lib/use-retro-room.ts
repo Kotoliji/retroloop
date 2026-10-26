@@ -69,7 +69,12 @@ export function useRetroRoom(retroId: string, name: string) {
     socket.on("participants:changed", store.setParticipants);
     socket.on("actions:changed", store.setActions);
 
+    // Connect on the next tick: React's development double-mount cleans up the
+    // first mount immediately, and this way it never opens a socket.
+    const connecting = setTimeout(() => socket.connect(), 0);
+
     return () => {
+      clearTimeout(connecting);
       socket.disconnect();
       socketRef.current = null;
     };

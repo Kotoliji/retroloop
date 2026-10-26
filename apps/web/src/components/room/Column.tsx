@@ -1,6 +1,7 @@
 "use client";
 
 import { LIMITS, type COLUMNS } from "@retro/shared";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { cardsIn, groupCards } from "@/lib/board-state";
@@ -17,6 +18,8 @@ export const ACCENTS = {
 type ColumnDef = (typeof COLUMNS)[number];
 
 export function Column({ column, actions }: { column: ColumnDef; actions: RoomActions }) {
+  const t = useTranslations("Board");
+  const title = t(`columns.${column.id}`);
   const cards = useRetroStore(useShallow((s) => cardsIn(s.cards, column.id)));
   const stage = useRetroStore((s) => s.retro?.stage);
   const joined = useRetroStore((s) => s.status === "joined");
@@ -38,7 +41,7 @@ export function Column({ column, actions }: { column: ColumnDef; actions: RoomAc
       className={`flex flex-col gap-3 rounded-xl border border-t-4 border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900/50 ${ACCENTS[column.id]}`}
     >
       <h2 id={`${column.id}-title`} className="flex items-baseline justify-between px-1 font-semibold">
-        {column.title}
+        {title}
         <span className="text-sm font-normal text-zinc-500">{cards.length}</span>
       </h2>
 
@@ -50,7 +53,7 @@ export function Column({ column, actions }: { column: ColumnDef; actions: RoomAc
           }}
         >
           <label htmlFor={inputId} className="sr-only">
-            Add a card to {column.title}
+            {t("addCard", { column: title })}
           </label>
           <textarea
             id={inputId}
@@ -65,7 +68,7 @@ export function Column({ column, actions }: { column: ColumnDef; actions: RoomAc
             disabled={!joined}
             maxLength={LIMITS.cardLength}
             rows={2}
-            placeholder="Add a card — Enter to post"
+            placeholder={t("addPlaceholder")}
             className="w-full resize-none rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-900 dark:focus:border-zinc-300"
           />
         </form>

@@ -1,6 +1,7 @@
 "use client";
 
 import type { ActionItemView, ActionStatus } from "@retro/shared";
+import { useLocale, useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { addDays, formatDay, today } from "@/lib/dates";
 import { useRetroStore } from "@/lib/retro-store";
@@ -26,13 +27,16 @@ export function ReviewList({ actions }: { actions: RoomActions }) {
   );
 }
 
-const CHOICES: { status: ActionStatus; label: string; active: string }[] = [
-  { status: "done", label: "Done", active: "bg-emerald-600 text-white border-emerald-600" },
-  { status: "open", label: "Not yet", active: "bg-amber-500 text-white border-amber-500" },
-  { status: "dropped", label: "Drop it", active: "bg-zinc-600 text-white border-zinc-600" },
+const CHOICES: { status: ActionStatus; label: "done" | "notYet" | "drop"; active: string }[] = [
+  { status: "done", label: "done", active: "bg-emerald-600 text-white border-emerald-600" },
+  { status: "open", label: "notYet", active: "bg-amber-500 text-white border-amber-500" },
+  { status: "dropped", label: "drop", active: "bg-zinc-600 text-white border-zinc-600" },
 ];
 
 function ReviewItem({ item, actions }: { item: ActionItemView; actions: RoomActions }) {
+  const t = useTranslations("Review");
+  const tc = useTranslations("Common");
+  const locale = useLocale();
   const overdue = item.status === "open" && item.dueDate < today();
   const [newDate, setNewDate] = useState(() => addDays(today(), 14));
 
@@ -40,12 +44,12 @@ function ReviewItem({ item, actions }: { item: ActionItemView; actions: RoomActi
     <li className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
       <p className="break-words">{item.text}</p>
       <p className="mt-1 text-sm text-zinc-500">
-        <span className="font-medium text-zinc-700 dark:text-zinc-300">{item.ownerName}</span> · due{" "}
-        {formatDay(item.dueDate)}
-        {overdue && <span className="ml-2 font-medium text-red-600">overdue</span>}
+        <span className="font-medium text-zinc-700 dark:text-zinc-300">{item.ownerName}</span> ·{" "}
+        {tc("due", { date: formatDay(item.dueDate, locale) })}
+        {overdue && <span className="ml-2 font-medium text-red-600">{t("overdue")}</span>}
       </p>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label={`Outcome of ${item.text}`}>
+      <div className="mt-3 flex flex-wrap items-center gap-2" role="group" aria-label={t("outcome", { text: item.text })}>
         {CHOICES.map(({ status, label, active }) => (
           <button
             key={status}
@@ -61,12 +65,12 @@ function ReviewItem({ item, actions }: { item: ActionItemView; actions: RoomActi
               item.reviewedHere && item.status === status ? active : "border-zinc-300 hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
             }`}
           >
-            {label}
+            {t(label)}
           </button>
         ))}
         {item.reviewedHere && item.status === "open" && (
           <label className="ml-auto flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
-            New due date
+            {t("newDate")}
             <input
               type="date"
               value={newDate}

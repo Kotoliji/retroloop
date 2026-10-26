@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
 import { useRetroStore } from "@/lib/retro-store";
 
@@ -10,6 +11,7 @@ function format(ms: number) {
 
 /** Counts down to the server's timer end, corrected for this browser's clock. */
 export function Timer() {
+  const t = useTranslations("Stage");
   const endsAt = useRetroStore((s) => s.retro?.timerEndsAt ?? null);
   const offset = useRetroStore((s) => s.clockOffset);
   const [now, setNow] = useState(() => Date.now());
@@ -26,14 +28,14 @@ export function Timer() {
   return (
     <p
       role="timer"
-      aria-label="Time left"
+      aria-label={t("timeLeft")}
       className={`rounded-lg px-3 py-1 font-mono text-lg font-semibold tabular-nums ${
         left <= 0
           ? "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300"
           : "bg-zinc-100 text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
       }`}
     >
-      {left <= 0 ? "Time's up" : format(left)}
+      {left <= 0 ? t("timesUp") : format(left)}
     </p>
   );
 }

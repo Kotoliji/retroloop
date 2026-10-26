@@ -1,6 +1,7 @@
 "use client";
 
 import { LIMITS, type ActionItemView } from "@retro/shared";
+import { useTranslations } from "next-intl";
 import { useId, useState } from "react";
 import { addDays, today } from "@/lib/dates";
 import { useRetroStore } from "@/lib/retro-store";
@@ -25,6 +26,8 @@ const input =
 
 /** Every item needs an owner and a due date — the form will not submit without them. */
 export function ActionForm({ initial, source, submitLabel, onSubmit, onCancel }: Props) {
+  const t = useTranslations("Actions");
+  const tc = useTranslations("Common");
   const participants = useRetroStore((s) => s.participants);
   const [text, setText] = useState(initial?.text ?? "");
   const [ownerName, setOwnerName] = useState(initial?.ownerName ?? "");
@@ -56,21 +59,21 @@ export function ActionForm({ initial, source, submitLabel, onSubmit, onCancel }:
       {source && (
         <p className="flex items-start justify-between gap-2 rounded-lg bg-sky-50 px-3 py-2 text-xs text-sky-900 dark:bg-sky-950 dark:text-sky-200">
           <span>
-            From topic: <span className="font-medium">{source.text}</span>
+            {t("fromTopic")} <span className="font-medium">{source.text}</span>
           </span>
-          <button type="button" onClick={source.onClear} aria-label="Unlink the topic" className="font-semibold">
+          <button type="button" onClick={source.onClear} aria-label={t("unlink")} className="font-semibold">
             ×
           </button>
         </p>
       )}
       <label className="sr-only" htmlFor={`${id}-text`}>
-        What will be done
+        {t("whatLabel")}
       </label>
       <textarea
         id={`${id}-text`}
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder="What exactly will be done?"
+        placeholder={t("whatPlaceholder")}
         maxLength={LIMITS.actionLength}
         rows={2}
         required
@@ -78,14 +81,14 @@ export function ActionForm({ initial, source, submitLabel, onSubmit, onCancel }:
       />
       <div className="grid grid-cols-2 gap-2">
         <label className="flex flex-col gap-1 text-xs text-zinc-600 dark:text-zinc-400">
-          Owner
+          {t("owner")}
           <input
             value={ownerName}
             onChange={(e) => setOwnerName(e.target.value)}
             list={`${id}-people`}
             maxLength={LIMITS.nameLength}
             required
-            placeholder="Who does it"
+            placeholder={t("ownerPlaceholder")}
             className={input}
           />
           <datalist id={`${id}-people`}>
@@ -95,7 +98,7 @@ export function ActionForm({ initial, source, submitLabel, onSubmit, onCancel }:
           </datalist>
         </label>
         <label className="flex flex-col gap-1 text-xs text-zinc-600 dark:text-zinc-400">
-          Due
+          {t("dueLabel")}
           <input
             type="date"
             value={dueDate}
@@ -116,7 +119,7 @@ export function ActionForm({ initial, source, submitLabel, onSubmit, onCancel }:
         </button>
         {onCancel && (
           <button type="button" onClick={onCancel} className="px-3 py-2 text-sm font-medium text-zinc-600">
-            Cancel
+            {tc("cancel")}
           </button>
         )}
       </div>

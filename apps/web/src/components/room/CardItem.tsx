@@ -1,6 +1,7 @@
 "use client";
 
 import { LIMITS, type CardView } from "@retro/shared";
+import { useTranslations } from "next-intl";
 import { memo, useState } from "react";
 import { useRetroStore } from "@/lib/retro-store";
 import type { RoomActions } from "@/lib/use-retro-room";
@@ -13,6 +14,8 @@ interface Props {
 }
 
 export const CardItem = memo(function CardItem({ card, actions, nested = false }: Props) {
+  const t = useTranslations("Board");
+  const tc = useTranslations("Common");
   const stage = useRetroStore((s) => s.retro?.stage);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(card.text ?? "");
@@ -31,7 +34,7 @@ export const CardItem = memo(function CardItem({ card, actions, nested = false }
 
   if (card.text === null) {
     return (
-      <div className="p-3" aria-label="A hidden card from a teammate">
+      <div className="p-3" aria-label={t("hiddenCard")}>
         <div className="h-4 w-3/4 rounded bg-zinc-200 dark:bg-zinc-800" aria-hidden />
         <div className="mt-2 h-4 w-1/2 rounded bg-zinc-200 dark:bg-zinc-800" aria-hidden />
       </div>
@@ -42,7 +45,7 @@ export const CardItem = memo(function CardItem({ card, actions, nested = false }
     return (
       <div className="p-2">
         <label htmlFor={`edit-${card.id}`} className="sr-only">
-          Edit card
+          {t("editCard")}
         </label>
         <textarea
           id={`edit-${card.id}`}
@@ -72,15 +75,15 @@ export const CardItem = memo(function CardItem({ card, actions, nested = false }
       <p className="break-words whitespace-pre-wrap">{card.text}</p>
       {(editable || showUngroup) && (
         <div className="mt-2 flex items-center gap-3 text-xs text-zinc-500">
-          {card.mine && <span>Your card</span>}
+          {card.mine && <span>{t("yourCard")}</span>}
           {editable && (
             <button onClick={startEditing} className="font-medium hover:text-zinc-900 dark:hover:text-zinc-100">
-              Edit
+              {tc("edit")}
             </button>
           )}
           {editable && (
             <button onClick={() => void actions.deleteCard(card)} className="font-medium hover:text-red-600">
-              Delete
+              {tc("delete")}
             </button>
           )}
           {showUngroup && (
@@ -88,7 +91,7 @@ export const CardItem = memo(function CardItem({ card, actions, nested = false }
               onClick={() => void actions.ungroupCard(card.id)}
               className="font-medium hover:text-zinc-900 dark:hover:text-zinc-100"
             >
-              Ungroup
+              {t("ungroup")}
             </button>
           )}
         </div>
