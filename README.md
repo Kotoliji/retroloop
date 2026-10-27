@@ -1,5 +1,7 @@
 # Retroloop
 
+[![CI](https://github.com/Kotoliji/retroloop/actions/workflows/ci.yml/badge.svg)](https://github.com/Kotoliji/retroloop/actions/workflows/ci.yml)
+
 Sprint retrospectives where the action items actually get done.
 
 **Live: https://retroloop-one.vercel.app** — start a retro and open the invite link
@@ -15,9 +17,22 @@ Why another retro tool: less than half of retrospective action items get
 completed in most teams, and existing tools stop at the board. See
 [docs/RESEARCH.md](docs/RESEARCH.md).
 
-> Work in progress, built in small phases — see the commit history.
+![The discussion: topics ranked by votes, the one being discussed highlighted, and action items with owners and due dates](docs/screenshots/discuss.png)
 
-## Status
+## Screenshots
+
+| | |
+|---|---|
+| ![Writing: other people's cards are placeholders, their text never reaches this browser](docs/screenshots/write-anonymous.png) | ![Grouping: similar cards dragged onto each other](docs/screenshots/group.png) |
+| **Write** — teammates' cards stay hidden until the reveal | **Group** — drag similar cards together |
+| ![The next retro opens with a review of last time's action items and the follow-through score](docs/screenshots/review.png) | ![Landing page](docs/screenshots/landing.png) |
+| **Review** — the next retro starts with last time's items | **Landing** — in English, Ukrainian, Russian and Portuguese |
+
+<p align="center"><img src="docs/screenshots/wrap-up-phone.png" alt="Wrap-up on a phone: what was agreed, exports and the end-of-retro survey" width="300"></p>
+
+## How it was built
+
+Phase by phase, one or more commits each:
 
 - [x] **Phase 0** — monorepo, realtime server with health checks, typed socket protocol, CI
 - [x] **Phase 1** — live board: create a retro, share the link, cards appear for everyone instantly
@@ -34,17 +49,21 @@ completed in most teams, and existing tools stop at the board. See
 |---|---|
 | Web app | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4 |
 | Realtime server | Node.js 24, Fastify 5, Socket.IO 4 |
-| Data | PostgreSQL 18 + Prisma 7, Redis 8 |
+| Data | PostgreSQL 18 + Prisma 7; Redis 8 to run several server instances (optional with one) |
 | Shared contract | `@retro/shared` — socket events and payload schemas (zod), used by both sides |
 | i18n | next-intl: English, Ukrainian, Russian, Portuguese on locale-prefixed routes; message keys type-checked |
 | Production | Docker images for both apps, Caddy with automatic HTTPS, see [docs/DEPLOY.md](docs/DEPLOY.md) |
-| Tooling | npm workspaces, Vitest, ESLint, tsup, Docker Compose, GitHub Actions |
+| Testing | Vitest (unit + integration on real Postgres/Redis), Playwright end-to-end, a load-test script |
+| Tooling | npm workspaces, ESLint, tsup, Docker Compose, GitHub Actions |
 
 ```
-apps/web         Next.js app (UI)
-apps/server      Fastify + Socket.IO realtime server, Prisma schema and migrations
-packages/shared  Wire protocol shared by web and server
-docs/            Research and design notes
+apps/web         Next.js app (UI, i18n messages, operator stats page)
+apps/server      Fastify + Socket.IO realtime server, Prisma schema and migrations,
+                 load-test and stats scripts
+packages/shared  Wire protocol and types shared by web and server
+e2e/             Playwright end-to-end tests
+deploy/          Caddy config for the self-hosted setup
+docs/            Research, deployment, performance, screenshots
 ```
 
 The web app and the realtime server are separate processes: Next.js serves the UI,
@@ -170,3 +189,7 @@ Server tests are integration tests: they start the real server and talk to it ov
 Socket.IO, against a separate `retro_test` PostgreSQL database (created and migrated
 automatically, so `npm run db:up` must be running). CI runs the same steps on every
 push against a fresh PostgreSQL.
+
+## License
+
+[MIT](LICENSE)
