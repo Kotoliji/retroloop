@@ -1,5 +1,29 @@
 # Deploying Retroloop
 
+Two ways: a free setup on managed services (how the live demo runs), or
+everything on one server of your own.
+
+## Free: Vercel + Render + Neon
+
+| Part | Service | Settings |
+|---|---|---|
+| Database | [Neon](https://neon.tech), free plan | Direct connection string (connection pooling **off**), ending in `?sslmode=require` |
+| Realtime server | [Render](https://render.com) Web Service, free instance | Language **Docker**, Dockerfile path `apps/server/Dockerfile`, root directory empty, health check path `/health` |
+| Web app | [Vercel](https://vercel.com), Hobby | Root directory `apps/web`, framework Next.js |
+
+Environment variables:
+
+- **Render:** `DATABASE_URL` (from Neon), `WEB_ORIGIN` (the Vercel URL, no
+  trailing slash), `TRUST_PROXY=true`, `ADMIN_TOKEN` (Render's "Generate").
+  Redis is not needed for a single instance.
+- **Vercel:** `NEXT_PUBLIC_SERVER_URL` (the Render URL).
+
+Both redeploy on every push to `main`. Migrations run when the server starts.
+A free Render instance sleeps after 15 minutes without traffic and takes up to
+a minute to wake up; a paid instance or an uptime pinger on `/health` avoids that.
+
+## One server of your own
+
 Everything runs on one small server with Docker: PostgreSQL, Redis, the realtime
 server, the web app and [Caddy](https://caddyserver.com), which gets and renews
 HTTPS certificates on its own.

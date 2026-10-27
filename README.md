@@ -2,6 +2,10 @@
 
 Sprint retrospectives where the action items actually get done.
 
+**Live: https://retroloop-one.vercel.app** — start a retro and open the invite link
+in a second browser to see it from two sides. (The API runs on a free instance
+that sleeps when idle, so the very first request can take up to a minute.)
+
 A real-time retrospective board for teams: everyone writes cards anonymously,
 the cards are revealed, grouped and voted on, and the retro ends with a short
 list of action items — each with an owner and a due date, carried into the next
