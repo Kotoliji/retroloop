@@ -37,7 +37,8 @@ test("a whole retro, from anonymous writing to the discussion", async ({ browser
   });
 
   await test.step("votes are limited and stay private until the results", async () => {
-    await goTo(alice, "3 min", "Start voting");
+    // The timer belongs to a stage (changing stage clears it), so start it once voting has begun.
+    await goTo(alice, "Start voting", "3 min");
     await expect(bob.getByRole("timer")).toBeVisible();
     await bob.getByRole("button", { name: "Vote for CI is slow" }).click();
     await bob.getByRole("button", { name: "Vote for CI is slow" }).click();
